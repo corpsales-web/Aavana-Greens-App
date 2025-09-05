@@ -61,4 +61,125 @@
           <div class="permission-item">
             <input type="checkbox" id="calendarPerm">
             <label for="calendarPerm">📅 Google Calendar Sync</label>
-           
+            <span class="info">Auto-add appointments & get reminders</span>
+          </div>
+          <div class="permission-item">
+            <input type="checkbox" id="cameraPerm">
+            <label for="cameraPerm">📷 Camera</label>
+            <span class="info">To upload project photos</span>
+          </div>
+        </div>
+        <button onclick="savePermissions()" class="btn-primary">✅ Allow & Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="mainApp" class="screen" style="display:none;">
+    <header class="header">
+      <div class="logo">
+        <img src="https://via.placeholder.com/40x40?text=AG" alt="Aavana Greens" />
+        <h1>Aavana Greens</h1>
+      </div>
+      <div class="header-right">
+        <button id="themeToggle" onclick="toggleTheme()">🌓</button>
+        <button onclick="logout()" class="btn-small">Logout</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="welcome-section">
+        <h2>Hello, <span id="userName">User</span> 👋</h2>
+        <p>Your workspace is ready.</p>
+      </section>
+
+      <div class="grid">
+        <!-- Leads -->
+        <div class="card-dashboard leads-section">
+          <h3>📞 Lead Management</h3>
+          <p>Track, assign & convert leads</p>
+          <button onclick="addLead()" class="btn-sm">+ Add Lead</button>
+          <div id="leadList" class="lead-list">
+            <p>No leads yet.</p>
+          </div>
+        </div>
+
+        <!-- Voice Task -->
+        <div class="card-dashboard voice-section">
+          <h3>🎙️ Voice Task Assignment</h3>
+          <p>Speak in Hindi, English, or Hinglish</p>
+          <div class="voice-recorder">
+            <button id="recordButton" onclick="toggleRecording()" class="btn-voice">
+              <span id="icon">🔴</span>
+              <span id="label">Start Recording</span>
+            </button>
+            <div id="waveform" class="waveform" style="display: none;"></div>
+          </div>
+          <p id="transcript" class="transcript-area"></p>
+        </div>
+
+        <!-- Location -->
+        <div class="card-dashboard">
+          <h3>📍 Location</h3>
+          <p>Capture GPS for site visits</p>
+          <button onclick="captureLocation()" class="btn-sm">📍 Get</button>
+          <p id="locationMsg"></p>
+        </div>
+
+        <!-- WhatsApp CRM -->
+        <div class="card-dashboard whatsapp-section">
+          <h3>💬 WhatsApp CRM</h3>
+          <p>Automate follow-ups, replies & lead nurturing</p>
+          <button onclick="addWorkflow()" class="btn-sm">+ Add Workflow</button>
+          <div id="workflowList" class="workflow-list">
+            <p>No workflows yet.</p>
+          </div>
+        </div>
+
+        <!-- Appointment Booking -->
+        <div class="card-dashboard booking-section">
+          <h3>📅 Appointment Booking</h3>
+          <p>Schedule site visits & design consultations</p>
+          <div class="booking-link-card">
+            <div class="link-icon">🔗</div>
+            <div class="link-text">
+              <strong>Share this link:</strong><br>
+              <a href="https://book.aavanagreens.com" target="_blank" class="booking-url">book.aavanagreens.com</a>
+            </div>
+          </div>
+          <div class="calendar-preview">
+            <h4>📅 Upcoming Appointments</h4>
+            <div id="appointmentList">
+              <p>No appointments scheduled yet.</p>
+            </div>
+            <button onclick="addAppointment()" class="btn-sm">+ Add Test Appointment</button>
+          </div>
+        </div>
+
+        <!-- Auto-Lead Filter -->
+        <div class="card-dashboard lead-filter-section">
+          <h3>🤖 Auto-Lead Filter (WhatsApp)</h3>
+          <p>AI-powered questions to qualify leads</p>
+          <button onclick="startLeadFilter()" class="btn-sm">▶️ Start Flow</button>
+          <div id="leadFilterChat" class="chat-box"></div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p>© 2025 Aavana Greens. Designed with care.</p>
+    </footer>
+  </div>
+
+  <!-- Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js');
+      });
+    }
+  </script>
+
+  <script src="script.js"></script>
+</body>
+</html>
