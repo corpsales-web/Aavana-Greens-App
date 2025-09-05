@@ -1,183 +1,158 @@
-// --- Login System (Simulated) ---
-let isLoggedIn = false;
-let currentUser = null;
+// Firebase Config - Replace with your real config
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "your-project-id.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project-id.appspot.com",
+  messagingSenderId: "your-sender-id",
+  appId: "your-app-id"
+};
 
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// DOM Elements
+const loginScreen = document.getElementById('loginScreen');
+const mainApp = document.getElementById('mainApp');
+const userName = document.getElementById('userName');
+const userRole = document.getElementById('userRole');
+
+// Check Auth State
+auth.onAuthStateChanged(user => {
+  if (user) {
+    db.collection('users').doc(user.uid).get().then(doc => {
+      const data = doc.data();
+      userName.textContent = data.name;
+      userRole.textContent = data.role || "Team Member";
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+    });
+  } else {
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'block';
+  }
+});
+
+// Send OTP
 function sendOtp() {
-  const phone = document.getElementById('phoneInput').value;
-  if (!phone) {
-    alert("Please enter your mobile number");
+  const phoneInput = document.getElementById('phoneInput').value;
+  if (!phoneInput || phoneInput.length !== 10 || !/^[6-9]\d{9}$/.test(phoneInput)) {
+    alert("Please enter a valid 10-digit Indian mobile number");
     return;
   }
-  document.getElementById('phoneAuth').style.display = 'none';
-  document.getElementById('otpScreen').style.display = 'block';
+
+  const fullNumber = "+91" + phoneInput;
+  const appVerifier = new firebase.auth.RecaptchaVerifier('phoneAuth', {
+    'size': 'invisible'
+  });
+
+  auth.signInWithPhoneNumber(fullNumber, appVerifier)
+    .then(confirmationResult => {
+      window.confirmationResult = confirmationResult;
+      document.getElementById('phoneAuth').style.display = 'none';
+      document.getElementById('otpScreen').style.display = 'block';
+    })
+    .catch(error => {
+      alert("Error sending OTP: " + error.message);
+    });
 }
 
+// Verify OTP
 function verifyOtp() {
-  document.getElementById('otpScreen').style.display = 'none';
-  document.getElementById('setPassword').style.display = 'block';
+  const otpInput = document.getElementById('otpInput').value;
+  if (!otpInput) {
+    alert("Please enter OTP");
+    return;
+  }
+
+  window.confirmationResult.confirm(otpInput)
+    .then(result => {
+      document.getElementById('otpScreen').style.display = 'none';
+      document.getElementById('setPassword').style.display = 'block';
+    })
+    .catch(error => {
+      alert("Invalid OTP: " + error.message);
+    });
 }
 
+// Create Account
 function createAccount() {
   const name = document.getElementById('nameInput').value;
   const password = document.getElementById('passwordInput').value;
+  const user = auth.currentUser;
+
   if (!name || !password) {
     alert("Please enter name and password");
     return;
   }
-  currentUser = { name: name, phone: "+918209040090", role: "team" };
-  document.getElementById('userName').textContent = name;
-  showMainApp();
-}
 
-function showMainApp() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('mainApp').style.display = 'block';
-}
-
-function logout() {
-  document.getElementById('mainApp').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'block';
-}
-
-function showForgotPassword() {
-  alert("For phone login, use OTP to re-login. No password reset needed.");
-}
-
-// --- Voice Task ---
-let mediaRecorder;
-let audioChunks = [];
-
-function startRecording() {
-  navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(stream => {
-      mediaRecorder = new MediaRecorder(stream);
-      audioChunks = [];
-      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-      mediaRecorder.onstop = () => {
-        const mockText = "Assign task to Raj: Visit Mr. Sharma tomorrow at 3 PM. Urgent.";
-        document.getElementById('transcript').textContent = mockText;
-        createTaskFromVoice(mockText);
-      };
-      mediaRecorder.start();
-      document.getElementById('stopBtn').disabled = false;
-    });
-}
-
-function stopRecording() {
-  if (mediaRecorder) mediaRecorder.stop();
-  document.getElementById('stopBtn').disabled = true;
-}
-
-function createTaskFromVoice(text) {
-  const taskList = document.createElement('div');
-  taskList.innerHTML = `<strong>🎙️ Voice Task:</strong> ${text}`;
-  document.querySelector('.voice-section').appendChild(taskList);
-  showMandatoryNotification(`New task: ${text.substring(0, 50)}...`);
-}
-
-// --- Mandatory Notifications ---
-function showMandatoryNotification(message) {
-  const popup = document.createElement('div');
-  popup.id = 'mandatoryPopup';
-  popup.innerHTML = `
-    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);color:white;display:flex;justify-content:center;align-items:center;z-index:9999;">
-      <div style="background:#2d5a27;padding:2rem;border-radius:12px;text-align:center;">
-        <h2>❗ MANDATORY</h2>
-        <p>${message}</p>
-        <button onclick="document.getElementById('mandatoryPopup').remove()" class="btn-primary">✅ Done</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(popup);
-}
-
-// --- Location Tracking ---
-function captureLocation() {
-  const msg = document.getElementById('locationMsg');
-  msg.textContent = "📍 Getting location...";
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      msg.textContent = `✅ Saved: ${lat}, ${lng}`;
-    }, () => msg.textContent = "❌ Denied");
-  } else {
-    msg.textContent = "❌ Not supported";
-  }
-}
-
-// --- Workflows ---
-let workflows = [];
-
-function addWorkflow() {
-  const name = prompt("Workflow name:");
-  if (!name) return;
-  const trigger = prompt("Trigger:");
-  const message = prompt("Message:");
-  const delay = prompt("Delay (hours):", "24");
-
-  const wf = { id: Date.now(), name, trigger, message, delay: parseInt(delay) };
-  workflows.push(wf);
-  renderWorkflows();
-}
-
-function renderWorkflows() {
-  const list = document.getElementById('workflowList');
-  if (workflows.length === 0) {
-    list.innerHTML = '<p>No workflows yet.</p>';
-    return;
-  }
-  list.innerHTML = '';
-  workflows.forEach(wf => {
-    const div = document.createElement('div');
-    div.className = 'workflow-item';
-    div.innerHTML = `
-      <strong>${wf.name}</strong>
-      <p><small>Trigger: ${wf.trigger}</small></p>
-      <p><em>"${wf.message}"</em></p>
-      <p>After: ${wf.delay} hours</p>
-      <div class="actions">
-        <button onclick="editWorkflow(${wf.id})">✏️ Edit</button>
-        <button onclick="deleteWorkflow(${wf.id})">🗑️ Delete</button>
-      </div>
-    `;
-    list.appendChild(div);
+  db.collection('users').doc(user.uid).set({
+    name: name,
+    phone: user.phoneNumber,
+    role: "pending",
+    createdAt: new Date()
+  }).then(() => {
+    document.getElementById('setPassword').style.display = 'none';
+    document.getElementById('permissionScreen').style.display = 'block';
+  }).catch(err => {
+    alert("Error saving user: " + err.message);
   });
 }
 
-function editWorkflow(id) {
-  const wf = workflows.find(w => w.id === id);
-  if (!wf) return;
-  const name = prompt("Edit name:", wf.name);
-  const trigger = prompt("Edit trigger:", wf.trigger);
-  const message = prompt("Edit message:", wf.message);
-  const delay = prompt("Edit delay:", wf.delay);
-  if (name && trigger && message && delay) {
-    wf.name = name;
-    wf.trigger = trigger;
-    wf.message = message;
-    wf.delay = parseInt(delay);
-    renderWorkflows();
+// Save Permissions
+function savePermissions() {
+  const hasNotify = document.getElementById('notifyPerm').checked;
+  const hasMic = document.getElementById('micPerm').checked;
+  const hasLocation = document.getElementById('locationPerm').checked;
+  const hasCalendar = document.getElementById('calendarPerm').checked;
+  const hasCamera = document.getElementById('cameraPerm').checked;
+
+  if (!hasNotify) {
+    alert("🔔 Notifications are mandatory to use this app.");
+    return;
+  }
+
+  db.collection('users').doc(auth.currentUser.uid).update({
+    permissions: {
+      notifications: true,
+      microphone: hasMic,
+      location: hasLocation,
+      calendar: hasCalendar,
+      camera: hasCamera
+    }
+  }).then(() => {
+    if (hasCalendar) syncCalendar(auth.currentUser.uid);
+    alert("All set! Welcome to Aavana Greens.");
+    location.reload();
+  });
+}
+
+// Sync Calendar
+function syncCalendar(userId) {
+  if (navigator.userAgent.includes("Android")) {
+    window.open("https://calendar.google.com", "_blank");
+    db.collection('users').doc(userId).update({
+      calendarSync: true,
+      calendarSyncAt: new Date()
+    });
   }
 }
 
-function deleteWorkflow(id) {
-  if (confirm("Delete?")) {
-    workflows = workflows.filter(w => w.id !== id);
-    renderWorkflows();
-  }
+// Logout
+function logout() {
+  auth.signOut();
 }
 
-// --- AI Lead Filter ---
-function startLeadFilter() {
-  const ai = document.getElementById('aiResponse');
-  ai.innerHTML = `
-    <p>🤖: Hi! Which space are you designing?<br>
-    1️⃣ Balcony<br>
-    2️⃣ Terrace<br>
-    3️⃣ Indoor Plants</p>
-  `;
-  setTimeout(() => {
-    ai.innerHTML += `<p>🤖: What’s your budget?<br>1️⃣ Under ₹50K<br>2️⃣ ₹50K–1L<br>3️⃣ Above ₹1L</p>`;
-  }, 2000);
+// Toggle Theme
+function toggleTheme() {
+  const body = document.body;
+  const theme = body.classList.contains('dark-theme') ? 'light' : 'dark';
+  body.className = theme + '-theme';
+  localStorage.setItem('theme', theme);
 }
+
+// Load Theme
+window.onload = function () {
+  const saved
