@@ -1,3 +1,4 @@
+/* Global Styles */
 * {
   margin: 0;
   padding: 0;
@@ -5,136 +6,17 @@
 }
 
 body {
-  font-family: 'Poppins', sans-serif;
-  background: #f4f7f6;
+  font-family: 'Inter', sans-serif;
+  background: #f8f9fa;
   color: #333;
+  line-height: 1.6;
+  transition: background 0.3s, color 0.3s;
 }
 
-.screen {
-  display: none;
-}
-
-.card {
-  background: white;
-  padding: 2rem;
-  margin: 2rem auto;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  max-width: 500px;
-  text-align: center;
-}
-
-.login-card input {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 16px;
-}
-
-.btn-primary {
-  background: #2d5a27;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
-  width: 100%;
-}
-
-.btn-danger {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-left: 10px;
-}
-
-.btn-warning {
-  background: #ffc107;
-  color: #000;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin: 5px;
-}
-
-.btn-primary:hover {
-  background: #234a1f;
-}
-
-.header {
-  background: #2d5a27;
-  color: white;
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logo img {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-}
-
-.main {
-  padding: 2rem;
-}
-
-.voice-section, .leads-section, .location-section, .workflows-section, .booking-section, .ai-section {
-  margin: 2rem 0;
-  padding: 1.5rem;
-  background: #fff;
-  border-radius: 12px;
-}
-
-.transcript {
-  margin-top: 10px;
-  font-style: italic;
-  color: #555;
-}
-
-.workflow-item {
-  background: #f0f7f0;
-  padding: 12px;
-  margin: 8px 0;
-  border-left: 4px solid #2d5a27;
-  border-radius: 6px;
-  position: relative;
-}
-
-.workflow-item .actions {
-  text-align: right;
-  margin-top: 8px;
-}
-
-.workflow-item .actions button {
-  margin-left: 5px;
-  font-size: 12px;
-  padding: 5px 10px;
-}
-
-.notification-area {
-  margin: 2rem 0;
-  text-align: center;
-}
-
-footer {
-  text-align: center;
-  padding: 1rem;
-  margin-top: 2rem;
-  color: #666;
-  font-size: 14px;
-}
+.light-theme {
+  --bg: #f8f9fa;
+  --card-bg: #ffffff;
+  --text: #333;
+  --primary: #2d5a27;
+  --border: #ddd;
+  --
