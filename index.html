@@ -3,141 +3,99 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#2d5a27" />
   <title>Aavana Greens | Smart Digital Manager</title>
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
-<body>
+<body class="light-theme">
 
   <!-- Login Screen -->
   <div id="loginScreen" class="screen">
     <div class="card login-card">
-      <h2>🔐 Aavana Greens Login</h2>
-      <p>Login with your mobile number</p>
+      <div class="logo">
+        <img src="https://via.placeholder.com/60x60?text=AG" alt="Aavana Greens" />
+        <h1>Aavana Greens</h1>
+      </div>
+      <p class="tagline">Elegant. Smart. Yours.</p>
 
       <div id="phoneAuth">
-        <input type="tel" id="phoneInput" placeholder="Enter mobile (e.g., +918209040090)" required />
-        <button onclick="sendOtp()" class="btn-primary">Send OTP</button>
+        <input type="tel" id="phoneInput" placeholder="Enter 10-digit mobile number" maxlength="10" />
+        <button onclick="sendOtp()" class="btn-primary">→ Get OTP</button>
       </div>
 
       <div id="otpScreen" style="display:none;">
         <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" />
-        <button onclick="verifyOtp()" class="btn-primary">Verify OTP</button>
+        <button onclick="verifyOtp()" class="btn-primary">→ Verify OTP</button>
       </div>
 
       <div id="setPassword" style="display:none;">
-        <input type="text" id="nameInput" placeholder="Enter your full name" />
+        <input type="text" id="nameInput" placeholder="Your full name" />
         <input type="password" id="passwordInput" placeholder="Set password" />
-        <button onclick="createAccount()" class="btn-primary">Create Account</button>
+        <button onclick="createAccount()" class="btn-primary">→ Create Account</button>
       </div>
 
-      <p><a href="#" onclick="showForgotPassword()">Forgot Password?</a></p>
+      <div id="permissionScreen" style="display:none;">
+        <h3>🔐 App Permissions</h3>
+        <p>To give you the best experience, please allow these permissions:</p>
+        <div class="permission-list">
+          <div class="permission-item required">
+            <input type="checkbox" id="notifyPerm" disabled checked>
+            <label for="notifyPerm">🔔 Notifications (Mandatory)</label>
+            <span class="info">Required for task alerts, follow-ups, and reminders</span>
+          </div>
+          <div class="permission-item">
+            <input type="checkbox" id="micPerm">
+            <label for="micPerm">🎤 Microphone</label>
+            <span class="info">For voice task assignment</span>
+          </div>
+          <div class="permission-item">
+            <input type="checkbox" id="locationPerm">
+            <label for="locationPerm">📍 Location</label>
+            <span class="info">To capture site visit GPS</span>
+          </div>
+          <div class="permission-item">
+            <input type="checkbox" id="calendarPerm">
+            <label for="calendarPerm">📅 Google Calendar Sync</label>
+            <span class="info">Auto-add appointments & get reminders</span>
+          </div>
+          <div class="permission-item">
+            <input type="checkbox" id="cameraPerm">
+            <label for="cameraPerm">📷 Camera</label>
+            <span class="info">To upload project photos</span>
+          </div>
+        </div>
+        <button onclick="savePermissions()" class="btn-primary">✅ Allow & Continue</button>
+      </div>
     </div>
   </div>
 
-  <!-- Main App (Hidden until login) -->
+  <!-- Main App -->
   <div id="mainApp" class="screen" style="display:none;">
-
-    <!-- Header -->
     <header class="header">
       <div class="logo">
-        <img src="https://via.placeholder.com/50x50?text=AG" alt="Aavana Greens Logo" />
+        <img src="https://via.placeholder.com/40x40?text=AG" alt="Aavana Greens" />
         <h1>Aavana Greens</h1>
       </div>
-      <button onclick="logout()" class="btn-primary">Logout</button>
+      <div class="header-right">
+        <button id="themeToggle" onclick="toggleTheme()">🌓</button>
+        <button onclick="logout()" class="btn-small">Logout</button>
+      </div>
     </header>
 
-    <!-- Main Content -->
     <main class="main">
-      <section class="dashboard">
-        <h2>Welcome, <span id="userName">User</span>!</h2>
-        <p>Role: <span id="userRole">Team Member</span></p>
+      <section class="welcome-section">
+        <h2>Hello, <span id="userName">User</span> 👋</h2>
+        <p>Your workspace is ready.</p>
       </section>
 
-      <!-- Leads Section -->
-      <section class="leads-section">
-        <h2>📞 Leads</h2>
-        <button onclick="addLead()" class="btn-primary">+ Add Lead</button>
-        <div id="leadList">
-          <p>No leads yet.</p>
-        </div>
-      </section>
-
-      <!-- Voice Task -->
-      <section class="voice-section">
-        <h2>🎙️ Voice Task Assignment</h2>
-        <button onclick="startRecording()" class="btn-primary">🎤 Start Recording</button>
-        <button onclick="stopRecording()" id="stopBtn" disabled class="btn-danger">⏹️ Stop</button>
-        <p id="transcript" style="margin-top: 10px; font-style: italic;"></p>
-      </section>
-
-      <!-- Location Tracking -->
-      <section class="location-section">
-        <h2>📍 Capture Location</h2>
-        <button onclick="captureLocation()" class="btn-primary">Get GPS Location</button>
-        <p id="locationMsg"></p>
-      </section>
-
-      <!-- Workflows Section -->
-      <section class="workflows-section">
-        <h2>🔄 WhatsApp Workflows</h2>
-        <p>Automate follow-ups, replies, and tasks</p>
-        <button onclick="addWorkflow()" class="btn-primary">+ Add Workflow</button>
-        <div id="workflowList">
-          <p>No workflows yet.</p>
-        </div>
-      </section>
-
-      <!-- AI Lead Filter -->
-      <section class="ai-section">
-        <h2>🤖 AI Lead Filter</h2>
-        <p>Auto-ask questions on WhatsApp</p>
-        <button onclick="startLeadFilter()" class="btn-primary">Start AI Filter</button>
-        <div id="aiResponse"></div>
-      </section>
-
-      <!-- Appointment Booking -->
-      <section class="booking-section">
-        <h2>📅 Appointment Booking</h2>
-        <p>Share this link with clients:</p>
-        <a href="https://forms.gle/your-link-here" target="_blank" class="btn-primary">🔗 Book.aavanagreens.com</a>
-      </section>
-
-      <!-- Admin Panel (Only Visible to Super Admin) -->
-      <section id="adminPanel" style="display:none;">
-        <h2>🔐 Super Admin Controls</h2>
-        <div class="card">
-          <h3>Manage Lead Stages</h3>
-          <input type="text" id="newStage" placeholder="New stage (e.g., Done)" />
-          <button onclick="alert('Only Super Admin can add stages.')" class="btn-primary">➕ Add Stage</button>
-        </div>
-        <div class="card">
-          <h3>Manage Lead Sources</h3>
-          <input type="text" id="newSource" placeholder="New source (e.g., Instagram)" />
-          <button onclick="alert('Only Super Admin can add sources.')" class="btn-primary">➕ Add Source</button>
-        </div>
-      </section>
-
-      <!-- Notifications -->
-      <section class="notification-area">
-        <button id="notifyBtn" class="btn-primary">🔔 Check Notifications</button>
-      </section>
-    </main>
-
-    <footer class="footer">
-      <p>&copy; 2025 Aavana Greens. All rights reserved.</p>
-    </footer>
-  </div>
-
-  <!-- Service Worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js');
-      });
-    }
-  </script>
-
-  <script src="script.js"></script>
-</body>
-</html>
+      <div class="grid">
+        <!-- Leads -->
+        <div class="card-dashboard leads-section">
+          <h3>📞 Lead Management</h3>
+          <p>Track, assign & convert leads</p>
+          <button onclick="addLead()" class="btn-sm">+ Add Lead</
