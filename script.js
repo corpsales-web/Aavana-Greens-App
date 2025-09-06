@@ -130,7 +130,7 @@ function savePermissions() {
   }).then(() => {
     if (hasCalendar) syncCalendar(auth.currentUser.uid);
     alert("All set! Welcome to Aavana Greens.");
-    location.reload();
+    location.reload(); // This triggers onAuthStateChanged
   });
 }
 
