@@ -25,19 +25,29 @@
       </div>
       <p class="tagline">Elegant. Smart. Yours.</p>
 
-      <div id="phoneAuth"></div> <!-- Empty div for reCAPTCHA -->
+      <!-- Empty div for reCAPTCHA -->
+      <div id="phoneAuth"></div>
 
+      <!-- Phone Input -->
+      <div id="phoneInputSection">
+        <input type="tel" id="phoneInput" placeholder="Enter 10-digit mobile number" maxlength="10" />
+        <button onclick="sendOtp()" class="btn-primary">→ Get OTP</button>
+      </div>
+
+      <!-- OTP Screen -->
       <div id="otpScreen" style="display:none;">
         <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" />
         <button onclick="verifyOtp()" class="btn-primary">→ Verify OTP</button>
       </div>
 
+      <!-- Set Password -->
       <div id="setPassword" style="display:none;">
         <input type="text" id="nameInput" placeholder="Your full name" />
         <input type="password" id="passwordInput" placeholder="Set password" />
         <button onclick="createAccount()" class="btn-primary">→ Create Account</button>
       </div>
 
+      <!-- Permission Screen -->
       <div id="permissionScreen" style="display:none;">
         <h3>🔐 App Permissions</h3>
         <p>To give you the best experience, please allow these permissions:</p>
