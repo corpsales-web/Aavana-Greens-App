@@ -1,6 +1,6 @@
 // Firebase Config - Replace with your real config
 const firebaseConfig = {
- apiKey: "AIzaSyBNKKq2LoXdTaIniHKPaQKvnY8nehu62E4",
+  apiKey: "AIzaSyBNKKq2LoXdTaIniHKPaQKvnY8nehu62E4",
   authDomain: "aavanagreens-app.firebaseapp.com",
   projectId: "aavanagreens-app",
   storageBucket: "aavanagreens-app.firebasestorage.app",
@@ -25,7 +25,7 @@ auth.onAuthStateChanged(user => {
   if (user) {
     db.collection('users').doc(user.uid).get().then(doc => {
       const data = doc.data();
-      console.log("User data:", data);
+      console.log("User ", data);
       if (userName) userName.textContent = data.name || "User";
       if (userRole) userRole.textContent = data.role || "Team Member";
       if (loginScreen) loginScreen.style.display = 'none';
@@ -257,17 +257,47 @@ let leads = [];
 function addLead() {
   const name = prompt("Enter lead name:");
   if (!name) return;
+
+  const phone = prompt("Enter phone number (+91XXXXXXXXXX):");
+  if (!phone || !/^\+91\d{10}$/.test(phone)) {
+    alert("Please enter a valid Indian phone number");
+    return;
+  }
+
+  const email = prompt("Enter email (optional):") || "";
+  const address = prompt("Enter full address:") || "";
+  const city = prompt("Enter city:");
+  const state = prompt("Enter state:");
+  const country = prompt("Enter country:", "India");
+
+  const source = prompt("Source? (e.g., WhatsApp, Call, Website):") || "Unknown";
+  const stage = prompt("Stage? (New, Follow-up, Closed):") || "New";
+  const notes = prompt("Notes? (Optional):") || "";
+
   const lead = {
     id: Date.now(),
     name: name,
-    stage: "New",
-    source: "Unknown",
-    phone: "+919999999999",
+    phone: phone,
+    email: email,
+    address: address,
+    city: city,
+    state: state,
+    country: country,
+    source: source,
+    stage: stage,
+    notes: notes,
     createdAt: new Date().toLocaleString(),
-    remarks: []
+    assignedTo: "Unassigned"
   };
-  leads.push(lead);
-  renderLeads();
+
+  db.collection('leads').add(lead)
+    .then(() => {
+      showMandatoryNotification(`Lead "${name}" added successfully!`);
+      renderLeads();
+    })
+    .catch(err => {
+      alert("Error adding lead: " + err.message);
+    });
 }
 
 function renderLeads() {
@@ -436,4 +466,356 @@ function markAsDone(id) {
   showMandatoryNotification("Appointment completed!");
 }
 
-// --- Auto-Lead Filter
+// --- Auto-Lead Filter ---
+let currentLead = null;
+
+function startLeadFilter() {
+  const chat = document.getElementById('leadFilterChat');
+  chat.innerHTML = '';
+  currentLead = { phone: "+919999999999", responses: {} };
+  addBotMessage(chat, "Hi! 👋 Thanks for reaching out to Aavana Greens. To help you better, can I ask a few quick questions? 🌿");
+  setTimeout(() => askSpaceQuestion(chat), 1000);
+}
+
+function askSpaceQuestion(chat) {
+  addBotMessage(chat, "Which space are you looking to design?\n1️⃣ Balcony\n2️⃣ Terrace\n3️⃣ Indoor Plants\n4️⃣ Garden");
+  waitForResponse(chat, (response) => {
+    const space = ["Balcony", "Terrace", "Indoor Plants", "Garden"][response - 1];
+    if (space) {
+      currentLead.responses.space = space;
+      addBotMessage(chat, `✅ You selected: ${space}`);
+      setTimeout(() => askBudgetQuestion(chat), 1000);
+    } else {
+      addBotMessage(chat, "Please reply with 1, 2, 3, or 4.");
+      waitForResponse(chat, () => askSpaceQuestion(chat));
+    }
+  });
+}
+
+function askBudgetQuestion(chat) {
+  addBotMessage(chat, "What’s your budget?\n1️⃣ Under ₹50K\n2️⃣ ₹50K–1L\n3️⃣ Above ₹1L");
+  waitForResponse(chat, (response) => {
+    const budget = ["Under ₹50K", "₹50K–1L", "Above ₹1L"][response - 1];
+    if (budget) {
+      currentLead.responses.budget = budget;
+      addBotMessage(chat, `✅ You selected: ${budget}`);
+      setTimeout(() => askTimelineQuestion(chat), 1000);
+    } else {
+      addBotMessage(chat, "Please reply with 1, 2, or 3.");
+      waitForResponse(chat, () => askBudgetQuestion(chat));
+    }
+  });
+}
+
+function askTimelineQuestion(chat) {
+  addBotMessage(chat, "When are you planning this?\n1️⃣ This week\n2️⃣ Next month\n3️⃣ Just exploring");
+  waitForResponse(chat, (response) => {
+    const timeline = ["This week", "Next month", "Just exploring"][response - 1];
+    if (timeline) {
+      currentLead.responses.timeline = timeline;
+      addBotMessage(chat, `✅ You selected: ${timeline}`);
+      setTimeout(() => finalizeLead(chat), 1000);
+    } else {
+      addBotMessage(chat, "Please reply with 1, 2, or 3.");
+      waitForResponse(chat, () => askTimelineQuestion(chat));
+    }
+  });
+}
+
+function finalizeLead(chat) {
+  const { space, budget, timeline } = currentLead.responses;
+  let priority = "Cold";
+  if (timeline === "This week" && budget === "Above ₹1L") priority = "Hot";
+  else if (timeline === "Next month") priority = "Warm";
+
+  addBotMessage(chat, `🎯 Lead Qualified!\nSpace: ${space}\nBudget: ${budget}\nTimeline: ${timeline}\nPriority: ${priority}`);
+
+  db.collection('leads').add({
+    ...currentLead.responses,
+    priority: priority,
+    status: "New",
+    assignedTo: priority === "Hot" ? "Raj" : "Inside Sales",
+    timestamp: new Date()
+  });
+
+  if (timeline === "Just exploring") {
+    setTimeout(() => {
+      sendWhatsApp(currentLead.phone, "Hi! Here’s our latest catalog: https://yourdomain.com/catalog.pdf");
+    }, 2000);
+  }
+
+  addBotMessage(chat, "✅ Lead saved and assigned!");
+}
+
+function addBotMessage(chat, text) {
+  const p = document.createElement('p');
+  p.className = 'bot';
+  p.innerHTML = `<strong>🤖 Aavana Bot:</strong> ${text.replace(/\n/g, '<br>')}`;
+  chat.appendChild(p);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function waitForResponse(chat, callback) {
+  const input = prompt("Simulate client reply (enter 1, 2, 3, or 4):");
+  if (input && /^[1-4]$/.test(input)) {
+    const p = document.createElement('p');
+    p.className = 'user';
+    p.innerHTML = `<strong>You:</strong> ${input}`;
+    chat.appendChild(p);
+    chat.scrollTop = chat.scrollHeight;
+    callback(input);
+  } else {
+    addBotMessage(chat, "Invalid input. Try again.");
+    waitForResponse(chat, callback);
+  }
+}
+
+// --- Products ---
+function importExcel() {
+  if (!hasPermission('import_products')) {
+    alert("You don't have permission to import products.");
+    return;
+  }
+
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.xlsx, .xls, .csv';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = event => {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+      const headers = jsonData[0];
+      const rows = jsonData.slice(1);
+
+      const products = rows.map(row => {
+        return {
+          name: row[0] || "",
+          category: row[1] || "Uncategorized",
+          taxRate: parseFloat(row[2]) || 0,
+          hsnCode: row[3] || "",
+          uom: row[4] || "Pcs",
+          altUom: row[5] || "Dzn",
+          sellingPrice: parseInt(row[6]) || 0,
+          purchasePrice: parseInt(row[7]) || 0,
+          remarks: row[8] || "",
+          image: row[9] || "https://via.placeholder.com/60x60?text=No+Image",
+          itemCode: row[10] || ""
+        };
+      });
+
+      const batch = db.batch();
+      products.forEach(product => {
+        const docRef = db.collection('products').doc();
+        batch.set(docRef, product);
+      });
+
+      batch.commit().then(() => {
+        showMandatoryNotification(`✅ Successfully imported ${products.length} products!`);
+        renderProducts();
+      }).catch(err => {
+        alert("Error importing products: " + err.message);
+      });
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
+
+  input.click();
+}
+
+function renderProducts() {
+  db.collection('products').get().then(snapshot => {
+    const list = document.getElementById('productList');
+    list.innerHTML = '';
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const item = document.createElement('div');
+      item.className = 'product-item';
+      item.innerHTML = `
+        <div class="product-image">
+          <img src="${data.image}" alt="${data.name}">
+        </div>
+        <div class="product-info">
+          <h3>${data.name}</h3>
+          <p>SKU: ${data.itemCode}</p>
+        </div>
+        <div class="product-price">₹${data.sellingPrice.toLocaleString()}</div>
+        <div class="product-stock">12 in stock</div>
+      `;
+      list.appendChild(item);
+    });
+  });
+}
+
+// --- Catalogs ---
+function uploadCatalog() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.pdf';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      const fileName = file.name;
+      const fileUrl = e.target.result;
+
+      db.collection('catalogs').add({
+        name: fileName,
+        url: fileUrl,
+        uploadedBy: currentUser.phone,
+        uploadedAt: new Date().toLocaleString()
+      }).then(() => {
+        showMandatoryNotification("✅ Catalog uploaded!");
+        renderCatalogs();
+        notifyAllUsers(`New catalog uploaded: ${fileName}`);
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+function deleteCatalog(fileName) {
+  if (!confirm("Are you sure?")) return;
+
+  db.collection('catalogs').where('name', '==', fileName).get().then(snapshot => {
+    snapshot.docs.forEach(doc => {
+      doc.ref.delete();
+    });
+    showMandatoryNotification("🗑️ Catalog deleted!");
+    renderCatalogs();
+  });
+}
+
+function shareCatalog(fileName) {
+  const catalog = catalogs.find(c => c.name === fileName);
+  if (!catalog) return;
+
+  const phone = prompt("Enter lead's phone number:");
+  if (!phone) return;
+
+  // Simulate WhatsApp sharing
+  window.open(`https://wa.me/${phone}?text=Here's our latest catalog: ${catalog.url}`, "_blank");
+  showMandatoryNotification("📤 Catalog shared via WhatsApp!");
+}
+
+function notifyAllUsers(message) {
+  db.collection('users').get().then(snapshot => {
+    snapshot.docs.forEach(doc => {
+      const user = doc.data();
+      if (user.permissions?.['receive_notifications']) {
+        sendWhatsApp(user.phone, message);
+      }
+    });
+  });
+}
+
+function renderCatalogs() {
+  db.collection('catalogs').get().then(snapshot => {
+    const list = document.getElementById('catalogList');
+    list.innerHTML = '';
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const item = document.createElement('div');
+      item.className = 'catalog-item';
+      item.innerHTML = `
+        <div class="catalog-info">
+          <h3>${data.name}</h3>
+          <p>Uploaded on: ${data.uploadedAt}</p>
+        </div>
+        <div class="catalog-actions">
+          <button onclick="shareCatalog('${data.name}')">📤 Share</button>
+          <button onclick="deleteCatalog('${data.name}')">🗑️ Delete</button>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  });
+}
+
+// --- Role-Based Permissions ---
+function hasPermission(permission) {
+  const user = auth.currentUser;
+  if (!user) return false;
+
+  // Super Admin (you)
+  if (user.phoneNumber === "+918209040090") return true;
+
+  // Check assigned permissions
+  return db.collection('users').doc(user.uid).get().then(doc => {
+    const data = doc.data();
+    return data.permissions?.[permission] === true;
+  });
+}
+
+// --- Admin Panel ---
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(el => {
+    el.style.display = 'none';
+  });
+  document.getElementById(tabId).style.display = 'block';
+}
+
+// --- Aavana 2.0 ---
+function assignAavana2() {
+  const member = prompt("Enter team member name to assign Aavana 2.0:");
+  if (!member) return;
+
+  db.collection('settings').doc('aavana2').set({
+    assignedTo: member,
+    assignedAt: new Date().toLocaleString(),
+    status: "Active"
+  }).then(() => {
+    showMandatoryNotification(`Aavana 2.0 assigned to ${member}!`);
+  });
+}
+
+function pauseAavana2() {
+  const confirmPause = confirm("Pause Aavana 2.0? All automation will stop.");
+  if (confirmPause) {
+    db.collection('settings').doc('aavana2').update({
+      status: "Paused"
+    }).then(() => {
+      showMandatoryNotification("Aavana 2.0 paused!");
+    });
+  }
+}
+
+// --- Lead Integration ---
+function addLeadSource() {
+  const source = prompt("Enter lead source (e.g., Indiamart, Justdial):");
+  if (!source) return;
+
+  const description = prompt("Enter description:");
+  const status = "Not Connected";
+
+  const item = document.createElement('div');
+  item.className = 'source-item';
+  item.innerHTML = `
+    <div class="source-icon">🔗</div>
+    <div class="source-info">
+      <h3>${source}</h3>
+      <p>${description}</p>
+    </div>
+    <div class="source-status not-connected">${status}</div>
+    <div class="source-actions">
+      <button onclick="connectSource('${source}')">🔗 Connect</button>
+    </div>
+  `;
+  document.querySelector('.source-list').appendChild(item);
+}
+
+function connectSource(source) {
+  const apiKey = prompt(`Enter API key for ${source}:`);
+  if (!apiKey) return;
+
+  showMandatoryNotification(`${source} connected!`);
+}
