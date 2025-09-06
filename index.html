@@ -11,6 +11,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <!-- reCAPTCHA -->
+  <script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
 </head>
 <body class="light-theme">
 
@@ -23,10 +25,7 @@
       </div>
       <p class="tagline">Elegant. Smart. Yours.</p>
 
-      <div id="phoneAuth">
-        <input type="tel" id="phoneInput" placeholder="Enter 10-digit mobile number" maxlength="10" />
-        <button onclick="sendOtp()" class="btn-primary">→ Get OTP</button>
-      </div>
+      <div id="phoneAuth"></div> <!-- Empty div for reCAPTCHA -->
 
       <div id="otpScreen" style="display:none;">
         <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" />
