@@ -1,12 +1,13 @@
 // Firebase Config - Replace with your real config
 const firebaseConfig = {
-  apiKey: "AIzaSyBNKKq2LoXdTaIniHKPaQKvnY8nehu62E4",
+ apiKey: "AIzaSyBNKKq2LoXdTaIniHKPaQKvnY8nehu62E4",
   authDomain: "aavanagreens-app.firebaseapp.com",
   projectId: "aavanagreens-app",
   storageBucket: "aavanagreens-app.firebasestorage.app",
   messagingSenderId: "304956433136",
   appId: "1:304956433136:web:efbcb242d2e842f690d835"
 };
+
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -20,37 +21,21 @@ const userRole = document.getElementById('userRole');
 
 // Check Auth State
 auth.onAuthStateChanged(user => {
-  console.log("✅ Auth state changed:", user);
+  console.log("Auth state changed:", user);
   if (user) {
-    console.log("✅ User is logged in, fetching data...");
     db.collection('users').doc(user.uid).get().then(doc => {
       const data = doc.data();
-      console.log("✅ User data:", data);
-
-      // Force UI update
-      const loginScreen = document.getElementById('loginScreen');
-      const mainApp = document.getElementById('mainApp');
-      const userNameEl = document.getElementById('userName');
-      const userRoleEl = document.getElementById('userRole');
-
-      console.log("DOM Elements:", { loginScreen, mainApp, userNameEl, userRoleEl });
-
-      if (userNameEl) userNameEl.textContent = data.name || "User";
-      if (userRoleEl) userRoleEl.textContent = data.role || "Team Member";
-
+      console.log("User data:", data);
+      if (userName) userName.textContent = data.name || "User";
+      if (userRole) userRole.textContent = data.role || "Team Member";
       if (loginScreen) loginScreen.style.display = 'none';
-      if (mainApp) {
-        mainApp.style.display = 'block';
-        console.log("✅ mainApp is now visible!");
-      } else {
-        console.error("❌ mainApp not found in DOM");
-      }
+      if (mainApp) mainApp.style.display = 'block';
     }).catch(err => {
-      console.error("❌ Error fetching user data:", err);
+      console.error("Error fetching user:", err);
     });
   } else {
-    document.getElementById('mainApp').style.display = 'none';
-    document.getElementById('loginScreen').style.display = 'block';
+    if (mainApp) mainApp.style.display = 'none';
+    if (loginScreen) loginScreen.style.display = 'block';
   }
 });
 
@@ -64,15 +49,10 @@ function sendOtp() {
 
   const fullNumber = "+91" + phoneInput;
 
-  // Create reCAPTCHA verifier
   const appVerifier = new firebase.auth.RecaptchaVerifier('phoneAuth', {
-    'size': 'invisible',
-    'callback': function(response) {
-      // reCAPTCHA solved, proceed with OTP
-    }
+    'size': 'invisible'
   });
 
-  // Send OTP
   auth.signInWithPhoneNumber(fullNumber, appVerifier)
     .then(confirmationResult => {
       window.confirmationResult = confirmationResult;
@@ -150,7 +130,7 @@ function savePermissions() {
   }).then(() => {
     if (hasCalendar) syncCalendar(auth.currentUser.uid);
     alert("All set! Welcome to Aavana Greens.");
-    location.reload(); // This triggers onAuthStateChanged
+    location.reload();
   });
 }
 
@@ -456,106 +436,4 @@ function markAsDone(id) {
   showMandatoryNotification("Appointment completed!");
 }
 
-// --- Auto-Lead Filter ---
-let currentLead = null;
-
-function startLeadFilter() {
-  const chat = document.getElementById('leadFilterChat');
-  chat.innerHTML = '';
-  currentLead = { phone: "+919999999999", responses: {} };
-  addBotMessage(chat, "Hi! 👋 Thanks for reaching out to Aavana Greens. To help you better, can I ask a few quick questions? 🌿");
-  setTimeout(() => askSpaceQuestion(chat), 1000);
-}
-
-function askSpaceQuestion(chat) {
-  addBotMessage(chat, "Which space are you looking to design?\n1️⃣ Balcony\n2️⃣ Terrace\n3️⃣ Indoor Plants\n4️⃣ Garden");
-  waitForResponse(chat, (response) => {
-    const space = ["Balcony", "Terrace", "Indoor Plants", "Garden"][response - 1];
-    if (space) {
-      currentLead.responses.space = space;
-      addBotMessage(chat, `✅ You selected: ${space}`);
-      setTimeout(() => askBudgetQuestion(chat), 1000);
-    } else {
-      addBotMessage(chat, "Please reply with 1, 2, 3, or 4.");
-      waitForResponse(chat, () => askSpaceQuestion(chat));
-    }
-  });
-}
-
-function askBudgetQuestion(chat) {
-  addBotMessage(chat, "What’s your budget?\n1️⃣ Under ₹50K\n2️⃣ ₹50K–1L\n3️⃣ Above ₹1L");
-  waitForResponse(chat, (response) => {
-    const budget = ["Under ₹50K", "₹50K–1L", "Above ₹1L"][response - 1];
-    if (budget) {
-      currentLead.responses.budget = budget;
-      addBotMessage(chat, `✅ You selected: ${budget}`);
-      setTimeout(() => askTimelineQuestion(chat), 1000);
-    } else {
-      addBotMessage(chat, "Please reply with 1, 2, or 3.");
-      waitForResponse(chat, () => askBudgetQuestion(chat));
-    }
-  });
-}
-
-function askTimelineQuestion(chat) {
-  addBotMessage(chat, "When are you planning this?\n1️⃣ This week\n2️⃣ Next month\n3️⃣ Just exploring");
-  waitForResponse(chat, (response) => {
-    const timeline = ["This week", "Next month", "Just exploring"][response - 1];
-    if (timeline) {
-      currentLead.responses.timeline = timeline;
-      addBotMessage(chat, `✅ You selected: ${timeline}`);
-      setTimeout(() => finalizeLead(chat), 1000);
-    } else {
-      addBotMessage(chat, "Please reply with 1, 2, or 3.");
-      waitForResponse(chat, () => askTimelineQuestion(chat));
-    }
-  });
-}
-
-function finalizeLead(chat) {
-  const { space, budget, timeline } = currentLead.responses;
-  let priority = "Cold";
-  if (timeline === "This week" && budget === "Above ₹1L") priority = "Hot";
-  else if (timeline === "Next month") priority = "Warm";
-
-  addBotMessage(chat, `🎯 Lead Qualified!\nSpace: ${space}\nBudget: ${budget}\nTimeline: ${timeline}\nPriority: ${priority}`);
-
-  db.collection('leads').add({
-    ...currentLead.responses,
-    priority: priority,
-    status: "New",
-    assignedTo: priority === "Hot" ? "Raj" : "Inside Sales",
-    timestamp: new Date()
-  });
-
-  if (timeline === "Just exploring") {
-    setTimeout(() => {
-      sendWhatsApp(currentLead.phone, "Hi! Here’s our latest catalog: https://yourdomain.com/catalog.pdf");
-    }, 2000);
-  }
-
-  addBotMessage(chat, "✅ Lead saved and assigned!");
-}
-
-function addBotMessage(chat, text) {
-  const p = document.createElement('p');
-  p.className = 'bot';
-  p.innerHTML = `<strong>🤖 Aavana Bot:</strong> ${text.replace(/\n/g, '<br>')}`;
-  chat.appendChild(p);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-function waitForResponse(chat, callback) {
-  const input = prompt("Simulate client reply (enter 1, 2, 3, or 4):");
-  if (input && /^[1-4]$/.test(input)) {
-    const p = document.createElement('p');
-    p.className = 'user';
-    p.innerHTML = `<strong>You:</strong> ${input}`;
-    chat.appendChild(p);
-    chat.scrollTop = chat.scrollHeight;
-    callback(input);
-  } else {
-    addBotMessage(chat, "Invalid input. Try again.");
-    waitForResponse(chat, callback);
-  }
-}
+// --- Auto-Lead Filter
