@@ -20,6 +20,7 @@ const userRole = document.getElementById('userRole');
 
 // Check Auth State
 auth.onAuthStateChanged(user => {
+  console.log("Auth state changed:", user);
   if (user) {
     db.collection('users').doc(user.uid).get().then(doc => {
       const data = doc.data();
