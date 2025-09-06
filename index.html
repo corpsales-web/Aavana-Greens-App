@@ -109,7 +109,13 @@
       <div class="grid">
         <!-- Leads -->
         <div class="card-dashboard leads-section">
-          <h3>📞 Lead Management</h3>
+          <div class="card-header">
+            <h3>📞 Lead Management</h3>
+            <div class="stats">
+              <span class="stat">New: <strong id="newLeads">0</strong></span>
+              <span class="stat">Follow-ups: <strong id="followUps">0</strong></span>
+            </div>
+          </div>
           <p>Track, assign & convert leads</p>
           <button onclick="addLead()" class="btn-sm">+ Add Lead</button>
           <div id="leadList" class="lead-list">
@@ -119,7 +125,13 @@
 
         <!-- Voice Task -->
         <div class="card-dashboard voice-section">
-          <h3>🎙️ Voice Task Assignment</h3>
+          <div class="card-header">
+            <h3>🎙️ Voice Task Assignment</h3>
+            <div class="stats">
+              <span class="stat">Tasks: <strong id="tasks">0</strong></span>
+              <span class="stat">Pending: <strong id="pendingTasks">0</strong></span>
+            </div>
+          </div>
           <p>Speak in Hindi, English, or Hinglish</p>
           <div class="voice-recorder">
             <button id="recordButton" onclick="toggleRecording()" class="btn-voice">
@@ -133,7 +145,13 @@
 
         <!-- Location -->
         <div class="card-dashboard">
-          <h3>📍 Location</h3>
+          <div class="card-header">
+            <h3>📍 Location</h3>
+            <div class="stats">
+              <span class="stat">Visits: <strong id="visits">0</strong></span>
+              <span class="stat">GPS: <strong id="gpsStatus">Not Captured</strong></span>
+            </div>
+          </div>
           <p>Capture GPS for site visits</p>
           <button onclick="captureLocation()" class="btn-sm">📍 Get</button>
           <p id="locationMsg"></p>
@@ -141,7 +159,13 @@
 
         <!-- WhatsApp CRM -->
         <div class="card-dashboard whatsapp-section">
-          <h3>💬 WhatsApp CRM</h3>
+          <div class="card-header">
+            <h3>💬 WhatsApp CRM</h3>
+            <div class="stats">
+              <span class="stat">Workflows: <strong id="workflows">0</strong></span>
+              <span class="stat">Active: <strong id="activeWorkflows">0</strong></span>
+            </div>
+          </div>
           <p>Automate follow-ups, replies & lead nurturing</p>
           <button onclick="addWorkflow()" class="btn-sm">+ Add Workflow</button>
           <div id="workflowList" class="workflow-list">
@@ -151,7 +175,13 @@
 
         <!-- Appointment Booking -->
         <div class="card-dashboard booking-section">
-          <h3>📅 Appointment Booking</h3>
+          <div class="card-header">
+            <h3>📅 Appointment Booking</h3>
+            <div class="stats">
+              <span class="stat">Upcoming: <strong id="upcomingAppointments">0</strong></span>
+              <span class="stat">Today: <strong id="todayAppointments">0</strong></span>
+            </div>
+          </div>
           <p>Schedule site visits & design consultations</p>
           <div class="booking-link-card">
             <div class="link-icon">🔗</div>
@@ -171,7 +201,13 @@
 
         <!-- Auto-Lead Filter -->
         <div class="card-dashboard lead-filter-section">
-          <h3>🤖 Auto-Lead Filter (WhatsApp)</h3>
+          <div class="card-header">
+            <h3>🤖 Auto-Lead Filter (WhatsApp)</h3>
+            <div class="stats">
+              <span class="stat">Leads: <strong id="leads">0</strong></span>
+              <span class="stat">Hot: <strong id="hotLeads">0</strong></span>
+            </div>
+          </div>
           <p>AI-powered questions to qualify leads</p>
           <button onclick="startLeadFilter()" class="btn-sm">▶️ Start Flow</button>
           <div id="leadFilterChat" class="chat-box"></div>
