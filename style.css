@@ -46,12 +46,6 @@ a {
   display: none;
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
 /* Login Screen */
 .login-card {
   max-width: 400px;
@@ -89,6 +83,10 @@ a {
   font-size: 0.9rem;
   color: #666;
   margin-bottom: 1.5rem;
+}
+
+#phoneInputSection {
+  margin: 1rem 0;
 }
 
 .login-card input {
@@ -343,4 +341,307 @@ a {
   padding: 2px 8px;
   border-radius: 6px;
   font-size: 0.75rem;
- 
+  font-weight: 500;
+  margin-right: 6px;
+  text-transform: uppercase;
+}
+
+.tag.new { background: #e3f2fd; color: #1976d2; }
+.tag.follow-up { background: #fff8e1; color: #ff8f00; }
+.tag.closed { background: #e8f5e8; color: #2e7d32; }
+.tag.dropped { background: #ffebee; color: #c62828; }
+
+.lead-card .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 0.8rem;
+}
+
+.lead-card button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lead-card button:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.lead-card .timestamp {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.3rem;
+}
+
+/* WhatsApp CRM */
+.workflow-list {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.workflow-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px var(--shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.workflow-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+
+.workflow-card h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.workflow-card p {
+  margin: 0.3rem 0;
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.workflow-card .trigger {
+  font-style: italic;
+  color: #666;
+}
+
+.workflow-card .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 0.8rem;
+}
+
+.workflow-card button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.workflow-card button:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Appointment Booking */
+.booking-link-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 12px var(--shadow);
+  transition: transform 0.2s;
+}
+
+.booking-link-card:hover {
+  transform: translateY(-2px);
+}
+
+.link-icon {
+  font-size: 1.5rem;
+}
+
+.link-text {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.booking-url {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 1.1rem;
+}
+
+.calendar-preview {
+  margin-top: 1rem;
+}
+
+.calendar-preview h4 {
+  margin-bottom: 0.8rem;
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.appointment-item {
+  background: rgba(45, 90, 39, 0.05);
+  border-left: 4px solid var(--primary);
+  padding: 0.8rem;
+  margin: 0.5rem 0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.appointment-item .client {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.appointment-item .time {
+  color: #666;
+  font-style: italic;
+}
+
+.appointment-item .action {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 8px;
+}
+
+.appointment-item button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.appointment-item button:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Auto-Lead Filter */
+.chat-box {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(45, 90, 39, 0.05);
+  border-radius: 8px;
+  min-height: 100px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+}
+
+.chat-box p {
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  border-radius: 8px;
+  max-width: 80%;
+}
+
+.chat-box .bot {
+  background: #e8f5e8;
+  color: #1b5e20;
+  align-self: flex-start;
+  margin-right: auto;
+}
+
+.chat-box .user {
+  background: #f0f0f0;
+  color: #333;
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.chat-box p strong {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+  color: var(--primary);
+}
+
+/* Permission Screen */
+.permission-card {
+  max-width: 500px;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.permission-list {
+  margin: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.permission-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.permission-item input {
+  margin-right: 8px;
+  transform: scale(1.1);
+}
+
+.permission-item label {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.permission-item.required label {
+  color: #d32f2f;
+}
+
+.info {
+  font-size: 0.85rem;
+  color: #666;
+  margin-left: 24px;
+}
+
+.required input {
+  accent-color: #d32f2f;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main {
+    padding: 1rem;
+  }
+  .login-card {
+    margin: 10vh auto;
+    padding: 2rem;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dark Mode */
+body.dark-theme {
+  background: #1a1a1a;
+  color: #e0e0e0;
+}
