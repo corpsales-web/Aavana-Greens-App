@@ -30,6 +30,7 @@ auth.onAuthStateChanged(user => {
       if (userRole) userRole.textContent = data.role || "Team Member";
       if (loginScreen) loginScreen.style.display = 'none';
       if (mainApp) mainApp.style.display = 'block';
+      loadDashboardStats();
     }).catch(err => {
       console.error("Error fetching user:", err);
     });
@@ -293,7 +294,7 @@ function addLead() {
   db.collection('leads').add(lead)
     .then(() => {
       showMandatoryNotification(`Lead "${name}" added successfully!`);
-      renderLeads();
+      loadDashboardStats();
     })
     .catch(err => {
       alert("Error adding lead: " + err.message);
@@ -570,252 +571,37 @@ function waitForResponse(chat, callback) {
   }
 }
 
-// --- Products ---
-function importExcel() {
-  if (!hasPermission('import_products')) {
-    alert("You don't have permission to import products.");
-    return;
-  }
-
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.xlsx, .xls, .csv';
-  input.onchange = e => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-
-    reader.onload = event => {
-      const data = new Uint8Array(event.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-
-      const headers = jsonData[0];
-      const rows = jsonData.slice(1);
-
-      const products = rows.map(row => {
-        return {
-          name: row[0] || "",
-          category: row[1] || "Uncategorized",
-          taxRate: parseFloat(row[2]) || 0,
-          hsnCode: row[3] || "",
-          uom: row[4] || "Pcs",
-          altUom: row[5] || "Dzn",
-          sellingPrice: parseInt(row[6]) || 0,
-          purchasePrice: parseInt(row[7]) || 0,
-          remarks: row[8] || "",
-          image: row[9] || "https://via.placeholder.com/60x60?text=No+Image",
-          itemCode: row[10] || ""
-        };
-      });
-
-      const batch = db.batch();
-      products.forEach(product => {
-        const docRef = db.collection('products').doc();
-        batch.set(docRef, product);
-      });
-
-      batch.commit().then(() => {
-        showMandatoryNotification(`✅ Successfully imported ${products.length} products!`);
-        renderProducts();
-      }).catch(err => {
-        alert("Error importing products: " + err.message);
-      });
-    };
-
-    reader.readAsArrayBuffer(file);
-  };
-
-  input.click();
-}
-
-function renderProducts() {
-  db.collection('products').get().then(snapshot => {
-    const list = document.getElementById('productList');
-    list.innerHTML = '';
-    snapshot.docs.forEach(doc => {
-      const data = doc.data();
-      const item = document.createElement('div');
-      item.className = 'product-item';
-      item.innerHTML = `
-        <div class="product-image">
-          <img src="${data.image}" alt="${data.name}">
-        </div>
-        <div class="product-info">
-          <h3>${data.name}</h3>
-          <p>SKU: ${data.itemCode}</p>
-        </div>
-        <div class="product-price">₹${data.sellingPrice.toLocaleString()}</div>
-        <div class="product-stock">12 in stock</div>
-      `;
-      list.appendChild(item);
-    });
+// --- Dashboard Stats ---
+function loadDashboardStats() {
+  db.collection('leads').where('stage', '==', 'New').get().then(snapshot => {
+    document.getElementById('newLeads').textContent = snapshot.size;
   });
-}
 
-// --- Catalogs ---
-function uploadCatalog() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.pdf';
-  input.onchange = e => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = e => {
-      const fileName = file.name;
-      const fileUrl = e.target.result;
-
-      db.collection('catalogs').add({
-        name: fileName,
-        url: fileUrl,
-        uploadedBy: currentUser.phone,
-        uploadedAt: new Date().toLocaleString()
-      }).then(() => {
-        showMandatoryNotification("✅ Catalog uploaded!");
-        renderCatalogs();
-        notifyAllUsers(`New catalog uploaded: ${fileName}`);
-      });
-    };
-    reader.readAsDataURL(file);
-  };
-  input.click();
-}
-
-function deleteCatalog(fileName) {
-  if (!confirm("Are you sure?")) return;
-
-  db.collection('catalogs').where('name', '==', fileName).get().then(snapshot => {
-    snapshot.docs.forEach(doc => {
-      doc.ref.delete();
-    });
-    showMandatoryNotification("🗑️ Catalog deleted!");
-    renderCatalogs();
+  db.collection('leads').where('stage', '==', 'Follow-up').get().then(snapshot => {
+    document.getElementById('followUps').textContent = snapshot.size;
   });
-}
 
-function shareCatalog(fileName) {
-  const catalog = catalogs.find(c => c.name === fileName);
-  if (!catalog) return;
-
-  const phone = prompt("Enter lead's phone number:");
-  if (!phone) return;
-
-  // Simulate WhatsApp sharing
-  window.open(`https://wa.me/${phone}?text=Here's our latest catalog: ${catalog.url}`, "_blank");
-  showMandatoryNotification("📤 Catalog shared via WhatsApp!");
-}
-
-function notifyAllUsers(message) {
-  db.collection('users').get().then(snapshot => {
-    snapshot.docs.forEach(doc => {
-      const user = doc.data();
-      if (user.permissions?.['receive_notifications']) {
-        sendWhatsApp(user.phone, message);
-      }
-    });
+  db.collection('tasks').where('status', '==', 'Pending').get().then(snapshot => {
+    document.getElementById('pendingTasks').textContent = snapshot.size;
   });
-}
 
-function renderCatalogs() {
-  db.collection('catalogs').get().then(snapshot => {
-    const list = document.getElementById('catalogList');
-    list.innerHTML = '';
-    snapshot.docs.forEach(doc => {
-      const data = doc.data();
-      const item = document.createElement('div');
-      item.className = 'catalog-item';
-      item.innerHTML = `
-        <div class="catalog-info">
-          <h3>${data.name}</h3>
-          <p>Uploaded on: ${data.uploadedAt}</p>
-        </div>
-        <div class="catalog-actions">
-          <button onclick="shareCatalog('${data.name}')">📤 Share</button>
-          <button onclick="deleteCatalog('${data.name}')">🗑️ Delete</button>
-        </div>
-      `;
-      list.appendChild(item);
-    });
+  db.collection('appointments').where('date', '>=', new Date()).get().then(snapshot => {
+    document.getElementById('upcomingAppointments').textContent = snapshot.size;
   });
-}
 
-// --- Role-Based Permissions ---
-function hasPermission(permission) {
-  const user = auth.currentUser;
-  if (!user) return false;
-
-  // Super Admin (you)
-  if (user.phoneNumber === "+918209040090") return true;
-
-  // Check assigned permissions
-  return db.collection('users').doc(user.uid).get().then(doc => {
-    const data = doc.data();
-    return data.permissions?.[permission] === true;
+  db.collection('appointments').where('date', '==', new Date().toLocaleDateString()).get().then(snapshot => {
+    document.getElementById('todayAppointments').textContent = snapshot.size;
   });
-}
 
-// --- Admin Panel ---
-function switchTab(tabId) {
-  document.querySelectorAll('.tab-content').forEach(el => {
-    el.style.display = 'none';
+  db.collection('workflows').get().then(snapshot => {
+    document.getElementById('workflows').textContent = snapshot.size;
   });
-  document.getElementById(tabId).style.display = 'block';
-}
 
-// --- Aavana 2.0 ---
-function assignAavana2() {
-  const member = prompt("Enter team member name to assign Aavana 2.0:");
-  if (!member) return;
-
-  db.collection('settings').doc('aavana2').set({
-    assignedTo: member,
-    assignedAt: new Date().toLocaleString(),
-    status: "Active"
-  }).then(() => {
-    showMandatoryNotification(`Aavana 2.0 assigned to ${member}!`);
+  db.collection('workflows').where('status', '==', 'Active').get().then(snapshot => {
+    document.getElementById('activeWorkflows').textContent = snapshot.size;
   });
-}
 
-function pauseAavana2() {
-  const confirmPause = confirm("Pause Aavana 2.0? All automation will stop.");
-  if (confirmPause) {
-    db.collection('settings').doc('aavana2').update({
-      status: "Paused"
-    }).then(() => {
-      showMandatoryNotification("Aavana 2.0 paused!");
-    });
-  }
-}
-
-// --- Lead Integration ---
-function addLeadSource() {
-  const source = prompt("Enter lead source (e.g., Indiamart, Justdial):");
-  if (!source) return;
-
-  const description = prompt("Enter description:");
-  const status = "Not Connected";
-
-  const item = document.createElement('div');
-  item.className = 'source-item';
-  item.innerHTML = `
-    <div class="source-icon">🔗</div>
-    <div class="source-info">
-      <h3>${source}</h3>
-      <p>${description}</p>
-    </div>
-    <div class="source-status not-connected">${status}</div>
-    <div class="source-actions">
-      <button onclick="connectSource('${source}')">🔗 Connect</button>
-    </div>
-  `;
-  document.querySelector('.source-list').appendChild(item);
-}
-
-function connectSource(source) {
-  const apiKey = prompt(`Enter API key for ${source}:`);
-  if (!apiKey) return;
-
-  showMandatoryNotification(`${source} connected!`);
+  db.collection('leads').where('priority', '==', 'Hot').get().then(snapshot => {
+    document.getElementById('hotLeads').textContent = snapshot.size;
+  });
 }
