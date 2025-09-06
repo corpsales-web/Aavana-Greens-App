@@ -1,11 +1,11 @@
 // Firebase Config - Replace with your real config
 const firebaseConfig = {
-  apiKey: "AIzaSyBNKKq2LoXdTaIniHKPaQKvnY8nehu62E4",
-  authDomain: "aavanagreens-app.firebaseapp.com",
-  projectId: "aavanagreens-app",
-  storageBucket: "aavanagreens-app.firebasestorage.app",
-  messagingSenderId: "304956433136",
-  appId: "1:304956433136:web:efbcb242d2e842f690d835"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "your-project-id.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project-id.appspot.com",
+  messagingSenderId: "your-sender-id",
+  appId: "your-app-id"
 };
 
 // Initialize Firebase
@@ -44,10 +44,16 @@ function sendOtp() {
   }
 
   const fullNumber = "+91" + phoneInput;
+
+  // Create reCAPTCHA verifier
   const appVerifier = new firebase.auth.RecaptchaVerifier('phoneAuth', {
-    'size': 'invisible'
+    'size': 'invisible',
+    'callback': function(response) {
+      // reCAPTCHA solved, proceed with OTP
+    }
   });
 
+  // Send OTP
   auth.signInWithPhoneNumber(fullNumber, appVerifier)
     .then(confirmationResult => {
       window.confirmationResult = confirmationResult;
@@ -116,43 +122,4 @@ function savePermissions() {
 
   db.collection('users').doc(auth.currentUser.uid).update({
     permissions: {
-      notifications: true,
-      microphone: hasMic,
-      location: hasLocation,
-      calendar: hasCalendar,
-      camera: hasCamera
-    }
-  }).then(() => {
-    if (hasCalendar) syncCalendar(auth.currentUser.uid);
-    alert("All set! Welcome to Aavana Greens.");
-    location.reload();
-  });
-}
-
-// Sync Calendar
-function syncCalendar(userId) {
-  if (navigator.userAgent.includes("Android")) {
-    window.open("https://calendar.google.com", "_blank");
-    db.collection('users').doc(userId).update({
-      calendarSync: true,
-      calendarSyncAt: new Date()
-    });
-  }
-}
-
-// Logout
-function logout() {
-  auth.signOut();
-}
-
-// Toggle Theme
-function toggleTheme() {
-  const body = document.body;
-  const theme = body.classList.contains('dark-theme') ? 'light' : 'dark';
-  body.className = theme + '-theme';
-  localStorage.setItem('theme', theme);
-}
-
-// Load Theme
-window.onload = function () {
-  const saved
+      notifications:
