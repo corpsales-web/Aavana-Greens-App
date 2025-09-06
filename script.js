@@ -20,14 +20,33 @@ const userRole = document.getElementById('userRole');
 
 // Check Auth State
 auth.onAuthStateChanged(user => {
-  console.log("Auth state changed:", user);
+  console.log("✅ Auth state changed:", user);
   if (user) {
+    console.log("✅ User is logged in, fetching data...");
     db.collection('users').doc(user.uid).get().then(doc => {
       const data = doc.data();
-      userName.textContent = data.name;
-      userRole.textContent = data.role || "Team Member";
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('mainApp').style.display = 'block';
+      console.log("✅ User data:", data);
+
+      // Force UI update
+      const loginScreen = document.getElementById('loginScreen');
+      const mainApp = document.getElementById('mainApp');
+      const userNameEl = document.getElementById('userName');
+      const userRoleEl = document.getElementById('userRole');
+
+      console.log("DOM Elements:", { loginScreen, mainApp, userNameEl, userRoleEl });
+
+      if (userNameEl) userNameEl.textContent = data.name || "User";
+      if (userRoleEl) userRoleEl.textContent = data.role || "Team Member";
+
+      if (loginScreen) loginScreen.style.display = 'none';
+      if (mainApp) {
+        mainApp.style.display = 'block';
+        console.log("✅ mainApp is now visible!");
+      } else {
+        console.error("❌ mainApp not found in DOM");
+      }
+    }).catch(err => {
+      console.error("❌ Error fetching user data:", err);
     });
   } else {
     document.getElementById('mainApp').style.display = 'none';
