@@ -162,6 +162,33 @@ a {
   cursor: pointer;
 }
 
+/* Navigation Tabs */
+.nav-tabs {
+  display: flex;
+  overflow-x: auto;
+  gap: 2px;
+  padding: 0.5rem 1rem;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: thin;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tab-btn:hover, .tab-btn.active {
+  background: var(--primary);
+  color: white;
+}
+
 /* Main Content */
 .main {
   padding: 2rem;
@@ -402,6 +429,43 @@ a {
   font-size: 0.8rem;
   color: #666;
   margin-top: 0.3rem;
+}
+
+/* Sales Pipeline */
+.pipeline {
+  display: flex;
+  gap: 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+  padding: 1rem 0;
+}
+
+.stage {
+  min-width: 250px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+.stage h3 {
+  margin: 0 0 1rem 0;
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+.lead-items {
+  min-height: 100px;
+}
+
+.lead-item {
+  background: #f0f0f0;
+  padding: 0.8rem;
+  margin: 0.5rem 0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: move;
 }
 
 /* WhatsApp CRM */
