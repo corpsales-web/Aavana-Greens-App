@@ -1,6 +1,6 @@
 // Firebase Config - Replace with your real config
 const firebaseConfig = {
-  apiKey: "AIzaSyBNKKq2LoXdTaIniHKPaQKvnY8nehu62E4",
+ apiKey: "AIzaSyBNKKq2LoXdTaIniHKPaQKvnY8nehu62E4",
   authDomain: "aavanagreens-app.firebaseapp.com",
   projectId: "aavanagreens-app",
   storageBucket: "aavanagreens-app.firebasestorage.app",
@@ -165,7 +165,71 @@ window.onload = function () {
   document.body.className = saved + '-theme';
 };
 
-// --- Voice Task ---
+// Tab Switching
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(el => {
+    el.style.display = 'none';
+  });
+  document.getElementById(tabId).style.display = 'block';
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  event.target.classList.add('active');
+}
+
+// Drag & Drop for Sales Pipeline
+function allowDrop(ev) {
+  ev.preventDefault();
+}
+
+function drag(ev) {
+  ev.dataTransfer.setData("text", ev.target.id);
+}
+
+function drop(ev) {
+  ev.preventDefault();
+  const data = ev.dataTransfer.getData("text");
+  ev.target.appendChild(document.getElementById(data));
+  const stage = ev.target.parentElement.id;
+  const leadId = data.replace('lead-', '');
+  db.collection('leads').doc(leadId).update({ stage: stage });
+}
+
+// Dashboard Stats
+function loadDashboardStats() {
+  db.collection('leads').where('stage', '==', 'New').get().then(snapshot => {
+    document.getElementById('newLeads').textContent = snapshot.size;
+  });
+
+  db.collection('leads').where('stage', '==', 'Follow-up').get().then(snapshot => {
+    document.getElementById('followUps').textContent = snapshot.size;
+  });
+
+  db.collection('tasks').where('status', '==', 'Pending').get().then(snapshot => {
+    document.getElementById('pendingTasks').textContent = snapshot.size;
+  });
+
+  db.collection('appointments').where('date', '>=', new Date()).get().then(snapshot => {
+    document.getElementById('upcomingAppointments').textContent = snapshot.size;
+  });
+  db.collection('appointments').where('date', '==', new Date().toLocaleDateString()).get().then(snapshot => {
+    document.getElementById('todayAppointments').textContent = snapshot.size;
+  });
+
+  db.collection('workflows').get().then(snapshot => {
+    document.getElementById('workflows').textContent = snapshot.size;
+  });
+
+  db.collection('workflows').where('status', '==', 'Active').get().then(snapshot => {
+    document.getElementById('activeWorkflows').textContent = snapshot.size;
+  });
+
+  db.collection('leads').where('priority', '==', 'Hot').get().then(snapshot => {
+    document.getElementById('hotLeads').textContent = snapshot.size;
+  });
+}
+
+// Voice Task Assignment
 let isRecording = false;
 let mediaRecorder;
 let audioChunks = [];
@@ -184,6 +248,11 @@ function toggleRecording() {
 
         mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
         mediaRecorder.onstop = () => {
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const formData = new FormData();
+          formData.append('audio', blob, 'recording.webm');
+
+          // Simulate AI processing
           setTimeout(() => {
             const mockText = "Assign task to Raj: Visit Mr. Sharma tomorrow at 3 PM. Urgent.";
             document.getElementById('transcript').textContent = mockText;
@@ -237,7 +306,7 @@ function showMandatoryNotification(message) {
   document.body.appendChild(popup);
 }
 
-// --- Location ---
+// Location Capture
 function captureLocation() {
   const msg = document.getElementById('locationMsg');
   msg.textContent = "📍 Getting location...";
@@ -252,9 +321,7 @@ function captureLocation() {
   }
 }
 
-// --- Leads ---
-let leads = [];
-
+// Leads Management
 function addLead() {
   const name = prompt("Enter lead name:");
   if (!name) return;
@@ -301,173 +368,7 @@ function addLead() {
     });
 }
 
-function renderLeads() {
-  const list = document.getElementById('leadList');
-  if (leads.length === 0) {
-    list.innerHTML = '<p>No leads yet.</p>';
-    return;
-  }
-  list.innerHTML = '';
-  leads.forEach(lead => {
-    const card = document.createElement('div');
-    card.className = 'lead-card';
-    card.innerHTML = `
-      <h4>${lead.name}</h4>
-      <p><span class="tag ${getTagClass(lead.stage)}">${lead.stage}</span> from ${lead.source}</p>
-      <p class="timestamp">Added: ${lead.createdAt}</p>
-      <div class="actions">
-        <a href="tel:${lead.phone}" class="btn-call">📞 Call</a>
-        <a href="https://wa.me/${lead.phone}" target="_blank" class="btn-wa">💬 WhatsApp</a>
-        <button onclick="setFollowUp(${lead.id})">📅 Follow-up</button>
-      </div>
-    `;
-    list.appendChild(card);
-  });
-}
-
-function getTagClass(stage) {
-  switch(stage.toLowerCase()) {
-    case 'new': return 'new';
-    case 'follow-up': return 'follow-up';
-    case 'closed': return 'closed';
-    case 'dropped': return 'dropped';
-    default: return 'new';
-  }
-}
-
-function setFollowUp(id) {
-  const lead = leads.find(l => l.id === id);
-  if (!lead) return;
-  const remarks = prompt("Enter remarks before setting follow-up:");
-  if (!remarks) {
-    alert("❗ Remarks are mandatory before follow-up.");
-    return;
-  }
-  const time = prompt("Set follow-up time (e.g., Tomorrow 11 AM):");
-  lead.remarks.push({ text: remarks, time: time, addedAt: new Date().toLocaleString() });
-  showMandatoryNotification(`Follow up with ${lead.name} at ${time}`);
-  renderLeads();
-}
-
-// --- Workflows ---
-let workflows = [];
-
-function addWorkflow() {
-  const name = prompt("Workflow name:");
-  if (!name) return;
-  const trigger = prompt("Trigger:");
-  const message = prompt("Message:");
-  const delay = prompt("Delay (hours):", "24");
-  const wf = { id: Date.now(), name, trigger, message, delay: parseInt(delay) };
-  workflows.push(wf);
-  renderWorkflows();
-}
-
-function renderWorkflows() {
-  const list = document.getElementById('workflowList');
-  if (workflows.length === 0) {
-    list.innerHTML = '<p>No workflows yet.</p>';
-    return;
-  }
-  list.innerHTML = '';
-  workflows.forEach(wf => {
-    const card = document.createElement('div');
-    card.className = 'workflow-card';
-    card.innerHTML = `
-      <h4>${wf.name}</h4>
-      <p><strong>When:</strong> <span class="trigger">${wf.trigger}</span></p>
-      <p><strong>Send:</strong> "${wf.message}"</p>
-      <p><strong>After:</strong> ${wf.delay} hours</p>
-      <div class="actions">
-        <button onclick="editWorkflow(${wf.id})">✏️ Edit</button>
-        <button onclick="deleteWorkflow(${wf.id})">🗑️ Delete</button>
-      </div>
-    `;
-    list.appendChild(card);
-  });
-}
-
-function editWorkflow(id) {
-  const wf = workflows.find(w => w.id === id);
-  if (!wf) return;
-  const name = prompt("Edit name:", wf.name);
-  const trigger = prompt("Edit trigger:", wf.trigger);
-  const message = prompt("Edit message:", wf.message);
-  const delay = prompt("Edit delay:", wf.delay);
-  if (name && trigger && message && delay) {
-    wf.name = name;
-    wf.trigger = trigger;
-    wf.message = message;
-    wf.delay = parseInt(delay);
-    renderWorkflows();
-  }
-}
-
-function deleteWorkflow(id) {
-  if (confirm("Delete?")) {
-    workflows = workflows.filter(w => w.id !== id);
-    renderWorkflows();
-  }
-}
-
-// --- Appointments ---
-let appointments = [];
-
-function addAppointment() {
-  const name = prompt("Client name:");
-  if (!name) return;
-  const date = prompt("Date & time (e.g., Tomorrow 11 AM):");
-  const type = prompt("Type (e.g., Site Visit):");
-  const appointment = {
-    id: Date.now(),
-    name: name,
-    date: date,
-    type: type,
-    addedAt: new Date().toLocaleString()
-  };
-  appointments.push(appointment);
-  renderAppointments();
-}
-
-function renderAppointments() {
-  const list = document.getElementById('appointmentList');
-  if (appointments.length === 0) {
-    list.innerHTML = '<p>No appointments scheduled yet.</p>';
-    return;
-  }
-  list.innerHTML = '';
-  appointments.forEach(appt => {
-    const item = document.createElement('div');
-    item.className = 'appointment-item';
-    item.innerHTML = `
-      <div class="client">${appt.name}</div>
-      <div class="time">${appt.date} • ${appt.type}</div>
-      <div class="action">
-        <button onclick="rescheduleAppointment(${appt.id})">🔄 Reschedule</button>
-        <button onclick="markAsDone(${appt.id})">✅ Mark Done</button>
-      </div>
-    `;
-    list.appendChild(item);
-  });
-}
-
-function rescheduleAppointment(id) {
-  const appt = appointments.find(a => a.id === id);
-  if (!appt) return;
-  const newTime = prompt("New date & time:", appt.date);
-  if (newTime) {
-    appt.date = newTime;
-    renderAppointments();
-  }
-}
-
-function markAsDone(id) {
-  appointments = appointments.filter(a => a.id !== id);
-  renderAppointments();
-  showMandatoryNotification("Appointment completed!");
-}
-
-// --- Auto-Lead Filter ---
+// WhatsApp CRM - Auto-Lead Filter
 let currentLead = null;
 
 function startLeadFilter() {
@@ -571,37 +472,140 @@ function waitForResponse(chat, callback) {
   }
 }
 
-// --- Dashboard Stats ---
-function loadDashboardStats() {
-  db.collection('leads').where('stage', '==', 'New').get().then(snapshot => {
-    document.getElementById('newLeads').textContent = snapshot.size;
-  });
+// Tasks Management
+function addTask() {
+  const title = prompt("Task title:");
+  if (!title) return;
+  const assignee = prompt("Assign to:");
+  const dueDate = prompt("Due date:");
+  const priority = prompt("Priority (Low/Medium/High):");
 
-  db.collection('leads').where('stage', '==', 'Follow-up').get().then(snapshot => {
-    document.getElementById('followUps').textContent = snapshot.size;
-  });
+  const task = {
+    id: Date.now(),
+    title: title,
+    assignee: assignee,
+    dueDate: dueDate,
+    priority: priority,
+    status: "Pending",
+    createdAt: new Date().toLocaleString()
+  };
 
-  db.collection('tasks').where('status', '==', 'Pending').get().then(snapshot => {
-    document.getElementById('pendingTasks').textContent = snapshot.size;
+  db.collection('tasks').add(task).then(() => {
+    showMandatoryNotification(`Task "${title}" assigned to ${assignee}`);
   });
+}
 
-  db.collection('appointments').where('date', '>=', new Date()).get().then(snapshot => {
-    document.getElementById('upcomingAppointments').textContent = snapshot.size;
+// Aavana 2.0 – Digital Smart AI Assistant
+function aiGeneratePost() {
+  const output = document.getElementById('aiOutput');
+  output.innerHTML = `<p>🚀 <strong>Social Post:</strong> "Transform your balcony into a green oasis with Aavana Greens! 🌿 Book a free consultation today!"</p>`;
+}
+
+function aiRunAd() {
+  const output = document.getElementById('aiOutput');
+  output.innerHTML = `<p>🎯 <strong>Google Ad:</strong> "Best Indoor Plants in Bangalore – 50% Off This Week!"</p>`;
+}
+
+function aiCreateReel() {
+  const output = document.getElementById('aiOutput');
+  output.innerHTML = `<p>🎬 <strong>Reel Script:</strong> "3 Easy Steps to a Lush Balcony Garden!"</p>`;
+}
+
+function aiAnalyzePhoto() {
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.onchange = e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = document.createElement('img');
+      img.src = reader.result;
+      img.style.width = '100%';
+      img.style.borderRadius = '8px';
+      const output = document.getElementById('aiOutput');
+      output.innerHTML = `<p>✅ <strong>AI Analysis:</strong> "This space is perfect for vertical gardening with ferns and pothos."</p>`;
+      output.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  };
+  fileInput.click();
+}
+
+// ERP Integration
+function addLeadSource() {
+  const source = prompt("Enter lead source (e.g., Indiamart, Justdial):");
+  if (!source) return;
+
+  const description = prompt("Enter description:");
+  const status = "Not Connected";
+
+  const item = document.createElement('div');
+  item.className = 'source-item';
+  item.innerHTML = `
+    <div class="source-icon">🔗</div>
+    <div class="source-info">
+      <h3>${source}</h3>
+      <p>${description}</p>
+    </div>
+    <div class="source-status not-connected">${status}</div>
+    <div class="source-actions">
+      <button onclick="connectSource('${source}')">🔗 Connect</button>
+    </div>
+  `;
+  document.querySelector('.source-list').appendChild(item);
+}
+
+function connectSource(source) {
+  const apiKey = prompt(`Enter API key for ${source}:`);
+  if (!apiKey) return;
+
+  showMandatoryNotification(`${source} connected!`);
+}
+
+// Product Catalog
+function importExcel() {
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.xlsx, .csv';
+  fileInput.onchange = e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = event => {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+      jsonData.forEach(row => {
+        db.collection('products').add(row);
+      });
+      alert(`${jsonData.length} products imported successfully!`);
+    };
+    reader.readAsArrayBuffer(file);
+  };
+  fileInput.click();
+}
+
+function addProduct() {
+  const name = prompt("Product name:");
+  if (!name) return;
+  const price = prompt("Price:");
+  const category = prompt("Category:");
+  const stock = prompt("Stock:");
+
+  db.collection('products').add({
+    name, price, category, stock, addedAt: new Date()
+  }).then(() => {
+    alert("Product added!");
   });
+}
 
-  db.collection('appointments').where('date', '==', new Date().toLocaleDateString()).get().then(snapshot => {
-    document.getElementById('todayAppointments').textContent = snapshot.size;
-  });
-
-  db.collection('workflows').get().then(snapshot => {
-    document.getElementById('workflows').textContent = snapshot.size;
-  });
-
-  db.collection('workflows').where('status', '==', 'Active').get().then(snapshot => {
-    document.getElementById('activeWorkflows').textContent = snapshot.size;
-  });
-
-  db.collection('leads').where('priority', '==', 'Hot').get().then(snapshot => {
-    document.getElementById('hotLeads').textContent = snapshot.size;
+// Admin Panel
+function addRole() {
+  const role = prompt("Role name (e.g., Sales, Admin, Manager):");
+  if (!role) return;
+  const permissions = prompt("Permissions (comma-separated):");
+  db.collection('roles').add({ role, permissions }).then(() => {
+    alert(`Role "${role}" created!`);
   });
 }
