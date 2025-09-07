@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#2d5a27" />
   <title>Aavana Greens | Smart Digital Manager</title>
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -114,7 +114,7 @@
         </section>
 
         <div class="grid">
-          <div class="card-dashboard leads-section">
+          <div class="card-dashboard">
             <div class="card-header">
               <h3>📞 Lead Management</h3>
               <div class="stats">
@@ -123,7 +123,7 @@
               </div>
             </div>
             <p>Track, assign & convert leads</p>
-            <button onclick="addLead()" class="btn-sm">+ Add Lead</button>
+            <button onclick="showLeadModal()" class="btn-sm">+ Add Lead</button>
             <button onclick="switchTab('leads')" class="btn-sm">View Pipeline</button>
           </div>
 
@@ -179,7 +179,7 @@
               </div>
             </div>
             <p>Schedule site visits & design consultations</p>
-            <button onclick="switchTab('booking')" class="btn-sm">View Calendar</button>
+            <button onclick="showBookingModal()" class="btn-sm">View Calendar</button>
           </div>
           
           <div class="card-dashboard products-section">
@@ -214,18 +214,18 @@
           </div>
         </div>
       </div>
-
+      
       <div id="tasks" class="tab-content" style="display:none;">
         <h2>📝 Task Manager</h2>
         <p>Assign, track, and complete tasks</p>
-        <button onclick="addTask()" class="btn-primary">+ Add Task</button>
+        <button onclick="showTaskModal()" class="btn-primary">+ Add Task</button>
         <div id="taskList" class="task-list"></div>
       </div>
 
       <div id="whatsapp" class="tab-content" style="display:none;">
         <h2>💬 WhatsApp CRM</h2>
         <p>Auto-respond, nurture, and close leads</p>
-        <button onclick="addWorkflow()" class="btn-primary">+ Add Workflow</button>
+        <button onclick="showWorkflowModal()" class="btn-primary">+ Add Workflow</button>
         <div id="workflowList" class="workflow-list"></div>
       </div>
 
@@ -244,8 +244,8 @@
       <div id="products" class="tab-content" style="display:none;">
         <h2>📦 Product Catalog</h2>
         <p>Manage inventory, barcode, and bulk import</p>
-        <button onclick="importExcel()" class="btn-primary">📤 Import Excel</button>
-        <button onclick="addProduct()" class="btn-primary">+ Add Product</button>
+        <button onclick="showImportModal()" class="btn-primary">📤 Import Excel</button>
+        <button onclick="showProductModal()" class="btn-primary">+ Add Product</button>
         <div id="productList" class="product-list"></div>
       </div>
 
@@ -253,56 +253,10 @@
         <h2>🔗 ERP Integration</h2>
         <p>Sync leads from Indiamart, Justdial, Google Ads, Facebook</p>
         <div class="integration-actions">
-          <button onclick="addLeadSource()" class="btn-primary">➕ Add Lead Source</button>
+          <button onclick="showIntegrationModal()" class="btn-primary">➕ Add Lead Source</button>
         </div>
         <div class="source-list">
-          <div class="source-item">
-            <div class="source-icon">🌐</div>
-            <div class="source-info">
-              <h3>Indiamart</h3>
-              <p>Auto-create leads from Indiamart inquiries</p>
-            </div>
-            <div class="source-status">Connected</div>
-            <div class="source-actions">
-              <button onclick="syncIndiamart()">🔄 Sync Now</button>
-              <button onclick="editIndiamart()">⚙️ Settings</button>
-            </div>
           </div>
-          <div class="source-item">
-            <div class="source-icon">📞</div>
-            <div class="source-info">
-              <h3>Justdial</h3>
-              <p>Sync leads from Justdial calls & messages</p>
-            </div>
-            <div class="source-status">Connected</div>
-            <div class="source-actions">
-              <button onclick="syncJustdial()">🔄 Sync Now</button>
-              <button onclick="editJustdial()">⚙️ Settings</button>
-            </div>
-          </div>
-          <div class="source-item">
-            <div class="source-icon">🔍</div>
-            <div class="source-info">
-              <h3>Google Ads</h3>
-              <p>Auto-create leads from Google Form submissions</p>
-            </div>
-            <div class="source-status">Not Connected</div>
-            <div class="source-actions">
-              <button onclick="connectGoogle()">🔗 Connect</button>
-            </div>
-          </div>
-          <div class="source-item">
-            <div class="source-icon">📘</div>
-            <div class="source-info">
-              <h3>Facebook Leads</h3>
-              <p>Sync leads from Facebook Lead Ads</p>
-            </div>
-            <div class="source-status">Not Connected</div>
-            <div class="source-actions">
-              <button onclick="connectFacebook()">🔗 Connect</button>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div id="admin" class="tab-content" style="display:none;">
@@ -315,7 +269,7 @@
         <div class="admin-section">
           <h3>👥 Role-Based Permissions</h3>
           <div id="roleList"></div>
-          <button onclick="addRole()" class="btn-primary">+ Add Role</button>
+          <button onclick="showRoleModal()" class="btn-primary">+ Add Role</button>
         </div>
       </div>
 
