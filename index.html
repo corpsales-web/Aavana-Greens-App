@@ -6,21 +6,17 @@
   <meta name="theme-color" content="#2d5a27" />
   <title>Aavana Greens | Smart Digital Manager</title>
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Firebase SDK -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;600&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <!-- reCAPTCHA -->
   <script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
-  <!-- Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body class="light-theme">
 
-  <!-- Login Screen -->
   <div id="loginScreen" class="screen">
     <div class="card login-card">
       <div class="logo">
@@ -29,29 +25,24 @@
       </div>
       <p class="tagline">Elegant. Smart. Yours.</p>
 
-      <!-- Empty div for reCAPTCHA -->
       <div id="phoneAuth"></div>
 
-      <!-- Phone Input -->
       <div id="phoneInputSection">
         <input type="tel" id="phoneInput" placeholder="Enter 10-digit mobile number" maxlength="10" />
         <button onclick="sendOtp()" class="btn-primary">→ Get OTP</button>
       </div>
 
-      <!-- OTP Screen -->
       <div id="otpScreen" style="display:none;">
         <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" />
         <button onclick="verifyOtp()" class="btn-primary">→ Verify OTP</button>
       </div>
 
-      <!-- Set Password -->
       <div id="setPassword" style="display:none;">
         <input type="text" id="nameInput" placeholder="Your full name" />
         <input type="password" id="passwordInput" placeholder="Set password" />
         <button onclick="createAccount()" class="btn-primary">→ Create Account</button>
       </div>
 
-      <!-- Permission Screen -->
       <div id="permissionScreen" style="display:none;">
         <h3>🔐 App Permissions</h3>
         <p>To give you the best experience, please allow these permissions:</p>
@@ -87,7 +78,6 @@
     </div>
   </div>
 
-  <!-- Main App -->
   <div id="mainApp" class="screen" style="display:none;">
     <header class="header">
       <div class="logo">
@@ -109,19 +99,21 @@
       <button class="tab-btn" onclick="switchTab('products')">📦 Products</button>
       <button class="tab-btn" onclick="switchTab('erp')">🔗 ERP Sync</button>
       <button class="tab-btn" onclick="switchTab('admin')">🔐 Admin</button>
+      <button class="tab-btn" onclick="switchTab('reports')">📊 Reports</button>
+      <button class="tab-btn" onclick="switchTab('gallery')">🖼️ Gallery</button>
+      <button class="tab-btn" onclick="switchTab('catalogs')">📚 Catalogs</button>
+      <button class="tab-btn" onclick="switchTab('shopify')">🛍️ Shopify</button>
     </nav>
 
     <main class="main">
 
-      <!-- Dashboard -->
-      <div id="dashboard" class="tab-content">
+      <div id="dashboard" class="tab-content active">
         <section class="welcome-section">
           <h2>Hello, <span id="userName">User</span> 👋</h2>
           <p>Your workspace is ready.</p>
         </section>
 
         <div class="grid">
-          <!-- Leads -->
           <div class="card-dashboard leads-section">
             <div class="card-header">
               <h3>📞 Lead Management</h3>
@@ -132,12 +124,9 @@
             </div>
             <p>Track, assign & convert leads</p>
             <button onclick="addLead()" class="btn-sm">+ Add Lead</button>
-            <div id="leadList" class="lead-list">
-              <p>No leads yet.</p>
-            </div>
+            <button onclick="switchTab('leads')" class="btn-sm">View Pipeline</button>
           </div>
 
-          <!-- Voice Task -->
           <div class="card-dashboard voice-section">
             <div class="card-header">
               <h3>🎙️ Voice Task Assignment</h3>
@@ -157,21 +146,6 @@
             <p id="transcript" class="transcript-area"></p>
           </div>
 
-          <!-- Location -->
-          <div class="card-dashboard">
-            <div class="card-header">
-              <h3>📍 Location</h3>
-              <div class="stats">
-                <span class="stat">Visits: <strong id="visits">0</strong></span>
-                <span class="stat">GPS: <strong id="gpsStatus">Not Captured</strong></span>
-              </div>
-            </div>
-            <p>Capture GPS for site visits</p>
-            <button onclick="captureLocation()" class="btn-sm">📍 Get</button>
-            <p id="locationMsg"></p>
-          </div>
-
-          <!-- WhatsApp CRM -->
           <div class="card-dashboard whatsapp-section">
             <div class="card-header">
               <h3>💬 WhatsApp CRM</h3>
@@ -181,13 +155,21 @@
               </div>
             </div>
             <p>Automate follow-ups, replies & lead nurturing</p>
-            <button onclick="addWorkflow()" class="btn-sm">+ Add Workflow</button>
-            <div id="workflowList" class="workflow-list">
-              <p>No workflows yet.</p>
-            </div>
+            <button onclick="switchTab('whatsapp')" class="btn-sm">Manage Workflows</button>
           </div>
 
-          <!-- Appointment Booking -->
+          <div class="card-dashboard ai-section">
+            <div class="card-header">
+              <h3>🤖 Aavana 2.0</h3>
+              <div class="stats">
+                <span class="stat">Leads: <strong id="aiLeads">0</strong></span>
+                <span class="stat">Hot: <strong id="hotLeads">0</strong></span>
+              </div>
+            </div>
+            <p>Digital Smart AI Assistant</p>
+            <button onclick="switchTab('aiAssistant')" class="btn-sm">Manage AI</button>
+          </div>
+
           <div class="card-dashboard booking-section">
             <div class="card-header">
               <h3>📅 Appointment Booking</h3>
@@ -197,39 +179,23 @@
               </div>
             </div>
             <p>Schedule site visits & design consultations</p>
-            <div class="booking-link-card">
-              <div class="link-icon">🔗</div>
-              <div class="link-text">
-                <strong>Share this link:</strong><br>
-                <a href="https://book.aavanagreens.com" target="_blank" class="booking-url">book.aavanagreens.com</a>
-              </div>
-            </div>
-            <div class="calendar-preview">
-              <h4>📅 Upcoming Appointments</h4>
-              <div id="appointmentList">
-                <p>No appointments scheduled yet.</p>
-              </div>
-              <button onclick="addAppointment()" class="btn-sm">+ Add Test Appointment</button>
-            </div>
+            <button onclick="switchTab('booking')" class="btn-sm">View Calendar</button>
           </div>
-
-          <!-- Auto-Lead Filter -->
-          <div class="card-dashboard lead-filter-section">
+          
+          <div class="card-dashboard products-section">
             <div class="card-header">
-              <h3>🤖 Auto-Lead Filter (WhatsApp)</h3>
+              <h3>📦 Product Catalog</h3>
               <div class="stats">
-                <span class="stat">Leads: <strong id="leads">0</strong></span>
-                <span class="stat">Hot: <strong id="hotLeads">0</strong></span>
+                <span class="stat">Products: <strong id="products">0</strong></span>
+                <span class="stat">Value: <strong id="productValue">₹0</strong></span>
               </div>
             </div>
-            <p>AI-powered questions to qualify leads</p>
-            <button onclick="startLeadFilter()" class="btn-sm">▶️ Start Flow</button>
-            <div id="leadFilterChat" class="chat-box"></div>
+            <p>Manage inventory, barcode, and bulk import</p>
+            <button onclick="switchTab('products')" class="btn-sm">View Products</button>
           </div>
         </div>
       </div>
 
-      <!-- Leads Tab -->
       <div id="leads" class="tab-content" style="display:none;">
         <h2>📞 Sales Pipeline</h2>
         <p>Drag & drop leads across stages</p>
@@ -249,7 +215,6 @@
         </div>
       </div>
 
-      <!-- Tasks Tab -->
       <div id="tasks" class="tab-content" style="display:none;">
         <h2>📝 Task Manager</h2>
         <p>Assign, track, and complete tasks</p>
@@ -257,7 +222,6 @@
         <div id="taskList" class="task-list"></div>
       </div>
 
-      <!-- WhatsApp Tab -->
       <div id="whatsapp" class="tab-content" style="display:none;">
         <h2>💬 WhatsApp CRM</h2>
         <p>Auto-respond, nurture, and close leads</p>
@@ -265,7 +229,6 @@
         <div id="workflowList" class="workflow-list"></div>
       </div>
 
-      <!-- AI Assistant Tab -->
       <div id="aiAssistant" class="tab-content" style="display:none;">
         <h2>🤖 Aavana 2.0 – Digital Smart AI Assistant</h2>
         <p>AI that manages SEO, Google Ads, Social Media, Reels, UGC</p>
@@ -278,7 +241,6 @@
         <div id="aiOutput" class="ai-output"></div>
       </div>
 
-      <!-- Products Tab -->
       <div id="products" class="tab-content" style="display:none;">
         <h2>📦 Product Catalog</h2>
         <p>Manage inventory, barcode, and bulk import</p>
@@ -287,7 +249,6 @@
         <div id="productList" class="product-list"></div>
       </div>
 
-      <!-- ERP Tab -->
       <div id="erp" class="tab-content" style="display:none;">
         <h2>🔗 ERP Integration</h2>
         <p>Sync leads from Indiamart, Justdial, Google Ads, Facebook</p>
@@ -344,7 +305,6 @@
         </div>
       </div>
 
-      <!-- Admin Tab -->
       <div id="admin" class="tab-content" style="display:none;">
         <h2>🔐 Admin Panel</h2>
         <p>Manage roles, permissions, and analytics</p>
@@ -359,6 +319,138 @@
         </div>
       </div>
 
+      <div id="reports" class="tab-content" style="display:none;">
+        <h2>📊 Reports</h2>
+        <p>Download your business data in Excel or PDF</p>
+        <div class="report-actions">
+          <button onclick="exportLeads('excel')" class="btn-primary">📊 Export Leads (Excel)</button>
+          <button onclick="exportLeads('pdf')" class="btn-secondary">📄 Export Leads (PDF)</button>
+          <button onclick="exportTasks('excel')" class="btn-primary">📊 Export Tasks (Excel)</button>
+          <button onclick="exportTasks('pdf')" class="btn-secondary">📄 Export Tasks (PDF)</button>
+          <button onclick="exportSales('excel')" class="btn-primary">📊 Export Sales (Excel)</button>
+          <button onclick="exportSales('pdf')" class="btn-secondary">📄 Export Sales (PDF)</button>
+        </div>
+      </div>
+
+      <div id="gallery" class="tab-content" style="display:none;">
+        <h2>🖼️ Project Gallery</h2>
+        <p>Manage project images with price brackets</p>
+        <div class="project-stats">
+          <div class="stat-card">
+            <div class="icon">🏗️</div>
+            <div class="value">0</div>
+            <div class="label">Balcony Projects</div>
+          </div>
+          <div class="stat-card">
+            <div class="icon">🌿</div>
+            <div class="value">0</div>
+            <div class="label">Terrace Projects</div>
+          </div>
+          <div class="stat-card">
+            <div class="icon">🌳</div>
+            <div class="value">0</div>
+            <div class="label">Tree Projects</div>
+          </div>
+          <div class="stat-card">
+            <div class="icon">🌸</div>
+            <div class="value">0</div>
+            <div class="label">Garden Projects</div>
+          </div>
+        </div>
+        <div class="gallery-actions">
+          <button onclick="addProject()" class="btn-primary">➕ Add Project</button>
+        </div>
+        <div class="filters">
+          <div class="filter-group">
+            <label for="category">Category</label>
+            <select id="category">
+              <option value="all">All Categories</option>
+              <option value="balcony">Balcony Projects</option>
+              <option value="terrace">Terrace Projects</option>
+              <option value="tree">Tree Projects</option>
+              <option value="garden">Garden Projects</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="budget">Budget</label>
+            <select id="budget">
+              <option value="all">All Budgets</option>
+              <option value="low">Under ₹50K</option>
+              <option value="medium">₹50K–1L</option>
+              <option value="high">Above ₹1L</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="city">City</label>
+            <select id="city">
+              <option value="all">All Cities</option>
+              <option value="delhi">Delhi</option>
+              <option value="mumbai">Mumbai</option>
+              <option value="bangalore">Bangalore</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="productType">Product Type</label>
+            <select id="productType">
+              <option value="all">All Product Types</option>
+              <option value="planters">Planters</option>
+              <option value="fountains">Fountains</option>
+              <option value="lighting">Lighting</option>
+              <option value="furniture">Furniture</option>
+            </select>
+          </div>
+        </div>
+        <div id="projectList" class="project-list"></div>
+      </div>
+
+      <div id="catalogs" class="tab-content" style="display:none;">
+        <h2>📚 Product Catalogs</h2>
+        <p>Manage PDF catalogs for client sharing</p>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="icon">📄</div>
+            <div class="value">0</div>
+            <div class="label">Total Catalogs</div>
+          </div>
+          <div class="stat-card">
+            <div class="icon">👥</div>
+            <div class="value">0</div>
+            <div class="label">Team Members</div>
+          </div>
+          <div class="stat-card">
+            <div class="icon">💬</div>
+            <div class="value">0</div>
+            <div class="label">Catalogs Shared</div>
+          </div>
+        </div>
+        <div class="catalog-actions">
+          <button onclick="uploadCatalog()" class="btn-primary">📤 Upload New Catalog</button>
+        </div>
+        <div id="catalogList" class="catalog-list"></div>
+        <div class="how-to-use">
+          <h3>📋 How to Use Catalog Manager</h3>
+          <div class="how-to-content">
+            <div class="column">
+              <h4>For Design Team:</h4>
+              <ul>
+                <li>Upload new PDF catalogs (max 100MB)</li>
+                <li>Replace old catalogs with updated versions</li>
+                <li>Team gets notified of new uploads</li>
+                <li>Manage catalog library</li>
+              </ul>
+            </div>
+            <div class="column">
+              <h4>For Sales Team:</h4>
+              <ul>
+                <li>View and download catalogs</li>
+                <li>Share catalogs with clients via WhatsApp</li>
+                <li>Access latest updated versions</li>
+                <li>Get notifications about new catalogs</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <footer class="footer">
@@ -366,7 +458,6 @@
     </footer>
   </div>
 
-  <!-- Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
