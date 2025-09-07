@@ -312,7 +312,7 @@
           </div>
         </div>
         <div class="gallery-actions">
-          <button onclick="addProject()" class="btn-primary">➕ Add Project</button>
+          <button onclick="showProjectModal()" class="btn-primary">➕ Add Project</button>
         </div>
         <div class="filters">
           <div class="filter-group">
@@ -405,6 +405,34 @@
           </div>
         </div>
       </div>
+
+      <div id="shopify" class="tab-content" style="display:none;">
+        <h2>🛍️ Shopify Integration</h2>
+        <p>Manage your Shopify store from within Aavana Greens</p>
+        <div class="shopify-actions">
+          <button onclick="syncShopifyProducts()" class="btn-primary">🔄 Sync Products</button>
+          <button onclick="fetchShopifyOrders()" class="btn-secondary">🛒 Fetch Orders</button>
+          <button onclick="exportShopifyCustomers()" class="btn-secondary">👥 Export Customers</button>
+        </div>
+        <div id="shopifyDashboard">
+          <h3>Store Analytics</h3>
+          <p>Total Products: <strong id="shopifyProductCount">0</strong></p>
+          <p>Total Orders: <strong id="shopifyOrderCount">0</strong></p>
+          <p>Last Sync: <strong id="shopifyLastSync">N/A</strong></p>
+        </div>
+      </div>
+      
+      <div id="telephony" class="tab-content" style="display:none;">
+        <h2>📞 IVR & Telephony</h2>
+        <p>Manage call flow, caller tunes, and call routing</p>
+        <div class="telephony-actions">
+          <button onclick="manageIVR()" class="btn-primary">🎛️ Manage IVR</button>
+          <button onclick="setCallerTune()" class="btn-primary">🎵 Set Caller Tune</button>
+          <button onclick="configureMasking()" class="btn-primary">🛡️ Number Masking</button>
+        </div>
+      </div>
+      
+      
     </main>
 
     <footer class="footer">
@@ -412,6 +440,46 @@
     </footer>
   </div>
 
+  <div id="leadModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeModal('leadModal')">&times;</span>
+      <h3>➕ Add New Lead</h3>
+      <form id="leadForm">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" name="name" required>
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" name="phone" required>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" name="email">
+        </div>
+        <button type="submit" class="btn-primary">Save Lead</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="taskModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeModal('taskModal')">&times;</span>
+      <h3>➕ Add New Task</h3>
+      <form id="taskForm">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" name="title" required>
+        </div>
+        <div class="form-group">
+          <label>Assignee</label>
+          <input type="text" name="assignee" required>
+        </div>
+        <button type="submit" class="btn-primary">Create Task</button>
+      </form>
+    </div>
+  </div>
+  
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
