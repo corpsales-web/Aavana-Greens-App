@@ -1,0 +1,308 @@
+// server.js
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const admin = require('firebase-admin');
+const { v4: uuidv4 } = require('uuid');
+const fs = require('fs');
+
+const app = express();
+app.use(cors());
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use('/recordings', express.static('recordings'));
+
+// Ensure recordings directory exists
+if (!fs.existsSync('recordings')) {
+  fs.mkdirSync('recordings');
+}
+
+// Initialize Firebase Admin SDK
+const serviceAccount = require('./serviceAccountKey.json'); // Download from Firebase Console
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+const db = admin.firestore();
+
+// ===============================
+// 1. Incoming Call → AI Caller Tune
+// ===============================
+app.post('/incoming-call', async (req, res) => {
+  const { callSid, from, to } = req.body;
+
+  // Log call start
+  await db.collection('calls').doc(callSid).set({
+    callSid,
+    from,
+    to,
+    status: 'ringing',
+    direction: 'inbound',
+    startTime: new Date(),
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  // Play AI caller tune
+  const response = {
+    action: "play_audio",
+    url: "https://yourdomain.com/audio/aavana-greens-ai-tune.mp3"
+  };
+
+  res.json(response);
+});
+
+// ===============================
+// 2. IVR & Call Transfer
+// ===============================
+app.post('/ivr', async (req, res) => {
+  const { digits, callSid, from } = req.body;
+
+  let response;
+
+  if (digits === '1') {
+    // Transfer to Sales Team
+    response = {
+      action: "transfer",
+      number: "+919999999991",
+      label: "Sales Team"
+    };
+  } else if (digits === '2') {
+    // Transfer to Design Consultation
+    response = {
+      action: "transfer",
+      number: "+919999999992",
+      label: "Design Team"
+    };
+  } else if (digits === '3') {
+    // Send WhatsApp catalog
+    response = {
+      action: "send_whatsapp",
+      template: "catalog",
+      to: from
+    };
+  } else {
+    response = {
+      action: "play_audio",
+      url: "https://yourdomain.com/audio/invalid-option.mp3"
+    };
+  }
+
+  res.json(response);
+});
+
+// ===============================
+// 3. Call Ended → Save Recording & Notes
+// ===============================
+app.post('/call-ended', async (req, res) => {
+  const { callSid, recordingUrl, duration, from, to } = req.body;
+
+  // Download recording if URL exists
+  let localRecordingUrl = null;
+  if (recordingUrl) {
+    const response = await fetch(recordingUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    localRecordingUrl = `/recordings/${callSid}.mp3`;
+    fs.writeFileSync(`recordings/${callSid}.mp3`, buffer);
+  }
+
+  await db.collection('calls').doc(callSid).update({
+    status: 'completed',
+    duration,
+    recordingUrl: localRecordingUrl,
+    endTime: new Date(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  // Auto-create lead if not exists
+  const leadQuery = await db.collection('leads').where('phone', '==', from).limit(1).get();
+  if (leadQuery.empty) {
+    await db.collection('leads').add({
+      phone: from,
+      source: 'Call',
+      stage: 'New',
+      createdAt: new Date(),
+      assignedTo: 'Unassigned'
+    });
+  }
+
+  res.json({ status: 'Call logged successfully' });
+});
+
+// ===============================
+// 4. WhatsApp Webhook (Auto-Lead Filter)
+// ===============================
+app.post('/whatsapp-webhook', async (req, res) => {
+  const { from, message } = req.body;
+
+  // Create or update lead
+  const leadQuery = await db.collection('leads').where('phone', '==', from).limit(1).get();
+  let leadId;
+  if (leadQuery.empty) {
+    const docRef = await db.collection('leads').add({
+      phone: from,
+      source: 'WhatsApp',
+      stage: 'New',
+      messages: [],
+      createdAt: new Date()
+    });
+    leadId = docRef.id;
+  } else {
+    leadId = leadQuery.docs[0].id;
+  }
+
+  // Add message to lead
+  await db.collection('leads').doc(leadId).update({
+    messages: admin.firestore.FieldValue.arrayUnion({
+      text: message,
+      sender: 'customer',
+      timestamp: new Date()
+    })
+  });
+
+  // AI Auto-Reply Logic
+  let replyText = "Hi! Thanks for reaching out to Aavana Greens 🌿\nWhich space are you looking to design?\n1️⃣ Balcony\n2️⃣ Terrace\n3️⃣ Indoor Plants\n4️⃣ Garden";
+
+  if (message.includes("1") || message.includes("2") || message.includes("3") || message.includes("4")) {
+    replyText = "What’s your budget?\n1️⃣ Under ₹50K\n2️⃣ ₹50K–1L\n3️⃣ Above ₹1L";
+  } else if (message.includes("budget")) {
+    replyText = "When are you planning this?\n1️⃣ This week\n2️⃣ Next month\n3️⃣ Just exploring";
+  } else if (message.includes("week")) {
+    replyText = "🎯 Lead Qualified! Our team will call you shortly. Here’s our catalog: https://aavanagreens.com/catalog.pdf";
+    await db.collection('leads').doc(leadId).update({ priority: 'Hot', stage: 'Follow-up' });
+  }
+
+  // Save AI reply
+  await db.collection('leads').doc(leadId).update({
+    messages: admin.firestore.FieldValue.arrayUnion({
+      text: replyText,
+      sender: 'ai',
+      timestamp: new Date()
+    })
+  });
+
+  res.json({
+    action: "send_message",
+    to: from,
+    text: replyText
+  });
+});
+
+// ===============================
+// 5. Voice Task Assignment (AI Breakdown)
+// ===============================
+app.post('/voice-task', async (req, res) => {
+  const { audioUrl, userId } = req.body;
+
+  // Simulate AI transcription (in production, use Whisper API)
+  const transcript = "Assign task to Raj: Visit Mr. Sharma tomorrow at 3 PM. Urgent.";
+
+  // Extract task using AI logic
+  const task = {
+    assignee: "Raj",
+    action: "Site Visit",
+    client: "Mr. Sharma",
+    time: "tomorrow 3 PM",
+    priority: "Urgent",
+    addedBy: userId,
+    status: "Pending",
+    createdAt: new Date(),
+    reminders: ["1 hour before"]
+  };
+
+  await db.collection('tasks').add(task);
+
+  // Send push notification
+  res.json({ success: true, task });
+});
+
+// ===============================
+// 6. ERP Sync (Indiamart, Justdial)
+// ===============================
+app.get('/sync/indiamart', async (req, res) => {
+  // Simulate fetching leads from Indiamart API
+  const mockLeads = [
+    { name: "Mr. Kumar", phone: "+918888888888", email: "kumar@example.com", query: "Balcony Garden", timestamp: new Date() }
+  ];
+
+  for (let lead of mockLeads) {
+    const query = await db.collection('leads').where('phone', '==', lead.phone).limit(1).get();
+    if (query.empty) {
+      await db.collection('leads').add({
+        ...lead,
+        source: "Indiamart",
+        stage: "New",
+        assignedTo: "Inside Sales"
+      });
+    }
+  }
+
+  res.json({ synced: mockLeads.length, message: "Leads synced from Indiamart" });
+});
+
+app.get('/sync/justdial', async (req, res) => {
+  const mockLeads = [
+    { name: "Ms. Patel", phone: "+917777777777", query: "Indoor Plants", timestamp: new Date() }
+  ];
+
+  for (let lead of mockLeads) {
+    const query = await db.collection('leads').where('phone', '==', lead.phone).limit(1).get();
+    if (query.empty) {
+      await db.collection('leads').add({
+        ...lead,
+        source: "Justdial",
+        stage: "New",
+        assignedTo: "Inside Sales"
+      });
+    }
+  }
+
+  res.json({ synced: mockLeads.length, message: "Leads synced from Justdial" });
+});
+
+// ===============================
+// 7. Number Masking
+// ===============================
+app.post('/mask-number', async (req, res) => {
+  const { customerNumber } = req.body;
+  const masked = `CUST${Date.now().toString().slice(-6)}`;
+
+  await db.collection('masked_numbers').add({
+    masked,
+    actual: customerNumber,
+    timestamp: new Date()
+  });
+
+  res.json({ masked });
+});
+
+// ===============================
+// 8. AI Caller Tune (Festival)
+// ===============================
+app.get('/caller-tune', (req, res) => {
+  const today = new Date();
+  const month = today.getMonth(); // 0-11
+  const date = today.getDate();
+
+  let tune = "https://yourdomain.com/audio/regular.mp3";
+
+  if (month === 10 && date === 12) {
+    // Diwali
+    tune = "https://yourdomain.com/audio/diwali-tune.mp3";
+  } else if (month === 2 && date === 8) {
+    // Holi
+    tune = "https://yourdomain.com/audio/holi-tune.mp3";
+  }
+
+  res.json({ tune });
+});
+
+// ===============================
+// 9. Start Server
+// ===============================
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`✅ Aavana Greens Backend running on port ${PORT}`);
+  console.log(`🔗 Webhooks: https://yourdomain.com/incoming-call`);
+});
+
+module.exports = app;
