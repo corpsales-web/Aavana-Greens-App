@@ -1,19 +1,380 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Hello Aavana Greens</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding-top: 50px;
-      background-color: #f0f0f0;
-      color: #2d5a27;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#2d5a27" />
+  <title>Aavana Greens | Smart Digital Manager</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <!-- reCAPTCHA -->
+  <script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
+  <!-- Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body>
-  <h1>Hello, Aavana Greens!</h1>
-  <p>This page is working perfectly.</p>
+<body class="light-theme">
+
+  <!-- Login Screen -->
+  <div id="loginScreen" class="screen">
+    <div class="card login-card">
+      <div class="logo">
+        <img src="https://via.placeholder.com/60x60?text=AG" alt="Aavana Greens" />
+        <h1>Aavana Greens</h1>
+      </div>
+      <p class="tagline">Elegant. Smart. Yours.</p>
+
+      <!-- Empty div for reCAPTCHA -->
+      <div id="phoneAuth"></div>
+
+      <!-- Phone Input -->
+      <div id="phoneInputSection">
+        <input type="tel" id="phoneInput" placeholder="Enter 10-digit mobile number" maxlength="10" />
+        <button onclick="sendOtp()" class="btn-primary">→ Get OTP</button>
+      </div>
+
+      <!-- OTP Screen -->
+      <div id="otpScreen" style="display:none;">
+        <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" />
+        <button onclick="verifyOtp()" class="btn-primary">→ Verify OTP</button>
+      </div>
+
+      <!-- Set Password -->
+      <div id="setPassword" style="display:none;">
+        <input type="text" id="nameInput" placeholder="Your full name" />
+        <input type="password" id="passwordInput" placeholder="Set password" />
+        <button onclick="createAccount()" class="btn-primary">→ Create Account</button>
+      </div>
+
+      <!-- Permission Screen -->
+      <div id="permissionScreen" style="display:none;">
+        <h3>🔐 App Permissions</h3>
+        <p>To give you the best experience, please allow these permissions:</p>
+        <div class="permission-list">
+          <div class="permission-item required">
+            <input type="checkbox" id="notifyPerm" disabled checked>
+            <label for="notifyPerm">🔔 Notifications (Mandatory)</label>
+            <span class="info">Required for task alerts, follow-ups, and reminders</span>
+          </div>
+          <div class="permission-item">
+            <input type="checkbox" id="micPerm">
+            <label for="micPerm">🎤 Microphone</label>
+            <span class="info">For voice task assignment</span>
+          </div>
+          <div class="permission-item">
+            <input type="checkbox" id="locationPerm">
+            <label for="locationPerm">📍 Location</label>
+            <span class="info">To capture site visit GPS</span>
+          </div>
+          <div class="permission-item">
+            <input type="checkbox" id="calendarPerm">
+            <label for="calendarPerm">📅 Google Calendar Sync</label>
+            <span class="info">Auto-add appointments & get reminders</span>
+          </div>
+          <div class="permission-item">
+            <input type="checkbox" id="cameraPerm">
+            <label for="cameraPerm">📷 Camera</label>
+            <span class="info">To upload project photos</span>
+          </div>
+        </div>
+        <button onclick="savePermissions()" class="btn-primary">✅ Allow & Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="mainApp" class="screen" style="display:none;">
+    <header class="header">
+      <div class="logo">
+        <img src="https://via.placeholder.com/40x40?text=AG" alt="Aavana Greens" />
+        <h1>Aavana Greens</h1>
+      </div>
+      <div class="header-right">
+        <button id="themeToggle" onclick="toggleTheme()">🌓</button>
+        <button onclick="logout()" class="btn-small">Logout</button>
+      </div>
+    </header>
+
+    <nav class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('dashboard')">🏠 Dashboard</button>
+      <button class="tab-btn" onclick="switchTab('leads')">📞 Leads</button>
+      <button class="tab-btn" onclick="switchTab('tasks')">📝 Tasks</button>
+      <button class="tab-btn" onclick="switchTab('whatsapp')">💬 WhatsApp</button>
+      <button class="tab-btn" onclick="switchTab('aiAssistant')">🤖 Aavana 2.0</button>
+      <button class="tab-btn" onclick="switchTab('products')">📦 Products</button>
+      <button class="tab-btn" onclick="switchTab('erp')">🔗 ERP Sync</button>
+      <button class="tab-btn" onclick="switchTab('admin')">🔐 Admin</button>
+    </nav>
+
+    <main class="main">
+
+      <!-- Dashboard -->
+      <div id="dashboard" class="tab-content">
+        <section class="welcome-section">
+          <h2>Hello, <span id="userName">User</span> 👋</h2>
+          <p>Your workspace is ready.</p>
+        </section>
+
+        <div class="grid">
+          <!-- Leads -->
+          <div class="card-dashboard leads-section">
+            <div class="card-header">
+              <h3>📞 Lead Management</h3>
+              <div class="stats">
+                <span class="stat">New: <strong id="newLeads">0</strong></span>
+                <span class="stat">Follow-ups: <strong id="followUps">0</strong></span>
+              </div>
+            </div>
+            <p>Track, assign & convert leads</p>
+            <button onclick="addLead()" class="btn-sm">+ Add Lead</button>
+            <div id="leadList" class="lead-list">
+              <p>No leads yet.</p>
+            </div>
+          </div>
+
+          <!-- Voice Task -->
+          <div class="card-dashboard voice-section">
+            <div class="card-header">
+              <h3>🎙️ Voice Task Assignment</h3>
+              <div class="stats">
+                <span class="stat">Tasks: <strong id="tasks">0</strong></span>
+                <span class="stat">Pending: <strong id="pendingTasks">0</strong></span>
+              </div>
+            </div>
+            <p>Speak in Hindi, English, or Hinglish</p>
+            <div class="voice-recorder">
+              <button id="recordButton" onclick="toggleRecording()" class="btn-voice">
+                <span id="icon">🔴</span>
+                <span id="label">Start Recording</span>
+              </button>
+              <div id="waveform" class="waveform" style="display: none;"></div>
+            </div>
+            <p id="transcript" class="transcript-area"></p>
+          </div>
+
+          <!-- Location -->
+          <div class="card-dashboard">
+            <div class="card-header">
+              <h3>📍 Location</h3>
+              <div class="stats">
+                <span class="stat">Visits: <strong id="visits">0</strong></span>
+                <span class="stat">GPS: <strong id="gpsStatus">Not Captured</strong></span>
+              </div>
+            </div>
+            <p>Capture GPS for site visits</p>
+            <button onclick="captureLocation()" class="btn-sm">📍 Get</button>
+            <p id="locationMsg"></p>
+          </div>
+
+          <!-- WhatsApp CRM -->
+          <div class="card-dashboard whatsapp-section">
+            <div class="card-header">
+              <h3>💬 WhatsApp CRM</h3>
+              <div class="stats">
+                <span class="stat">Workflows: <strong id="workflows">0</strong></span>
+                <span class="stat">Active: <strong id="activeWorkflows">0</strong></span>
+              </div>
+            </div>
+            <p>Automate follow-ups, replies & lead nurturing</p>
+            <button onclick="addWorkflow()" class="btn-sm">+ Add Workflow</button>
+            <div id="workflowList" class="workflow-list">
+              <p>No workflows yet.</p>
+            </div>
+          </div>
+
+          <!-- Appointment Booking -->
+          <div class="card-dashboard booking-section">
+            <div class="card-header">
+              <h3>📅 Appointment Booking</h3>
+              <div class="stats">
+                <span class="stat">Upcoming: <strong id="upcomingAppointments">0</strong></span>
+                <span class="stat">Today: <strong id="todayAppointments">0</strong></span>
+              </div>
+            </div>
+            <p>Schedule site visits & design consultations</p>
+            <div class="booking-link-card">
+              <div class="link-icon">🔗</div>
+              <div class="link-text">
+                <strong>Share this link:</strong><br>
+                <a href="https://book.aavanagreens.com" target="_blank" class="booking-url">book.aavanagreens.com</a>
+              </div>
+            </div>
+            <div class="calendar-preview">
+              <h4>📅 Upcoming Appointments</h4>
+              <div id="appointmentList">
+                <p>No appointments scheduled yet.</p>
+              </div>
+              <button onclick="addAppointment()" class="btn-sm">+ Add Test Appointment</button>
+            </div>
+          </div>
+
+          <!-- Auto-Lead Filter -->
+          <div class="card-dashboard lead-filter-section">
+            <div class="card-header">
+              <h3>🤖 Auto-Lead Filter (WhatsApp)</h3>
+              <div class="stats">
+                <span class="stat">Leads: <strong id="leads">0</strong></span>
+                <span class="stat">Hot: <strong id="hotLeads">0</strong></span>
+              </div>
+            </div>
+            <p>AI-powered questions to qualify leads</p>
+            <button onclick="startLeadFilter()" class="btn-sm">▶️ Start Flow</button>
+            <div id="leadFilterChat" class="chat-box"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leads Tab -->
+      <div id="leads" class="tab-content" style="display:none;">
+        <h2>📞 Sales Pipeline</h2>
+        <p>Drag & drop leads across stages</p>
+        <div class="pipeline">
+          <div class="stage" id="newLeadsStage" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h3>📥 New Leads</h3>
+            <div class="lead-items" id="newLeadsList"></div>
+          </div>
+          <div class="stage" id="followUpStage" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h3>🔄 Follow-up</h3>
+            <div class="lead-items" id="followUpList"></div>
+          </div>
+          <div class="stage" id="closedStage" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h3>✅ Closed</h3>
+            <div class="lead-items" id="closedList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tasks Tab -->
+      <div id="tasks" class="tab-content" style="display:none;">
+        <h2>📝 Task Manager</h2>
+        <p>Assign, track, and complete tasks</p>
+        <button onclick="addTask()" class="btn-primary">+ Add Task</button>
+        <div id="taskList" class="task-list"></div>
+      </div>
+
+      <!-- WhatsApp Tab -->
+      <div id="whatsapp" class="tab-content" style="display:none;">
+        <h2>💬 WhatsApp CRM</h2>
+        <p>Auto-respond, nurture, and close leads</p>
+        <button onclick="addWorkflow()" class="btn-primary">+ Add Workflow</button>
+        <div id="workflowList" class="workflow-list"></div>
+      </div>
+
+      <!-- AI Assistant Tab -->
+      <div id="aiAssistant" class="tab-content" style="display:none;">
+        <h2>🤖 Aavana 2.0 – Digital Smart AI Assistant</h2>
+        <p>AI that manages SEO, Google Ads, Social Media, Reels, UGC</p>
+        <div class="ai-actions">
+          <button onclick="aiGeneratePost()">✨ Generate Social Post</button>
+          <button onclick="aiRunAd()">🚀 Run Google Ad</button>
+          <button onclick="aiCreateReel()">🎬 Create Reel Script</button>
+          <button onclick="aiAnalyzePhoto()">📷 Analyze Site Photo</button>
+        </div>
+        <div id="aiOutput" class="ai-output"></div>
+      </div>
+
+      <!-- Products Tab -->
+      <div id="products" class="tab-content" style="display:none;">
+        <h2>📦 Product Catalog</h2>
+        <p>Manage inventory, barcode, and bulk import</p>
+        <button onclick="importExcel()" class="btn-primary">📤 Import Excel</button>
+        <button onclick="addProduct()" class="btn-primary">+ Add Product</button>
+        <div id="productList" class="product-list"></div>
+      </div>
+
+      <!-- ERP Tab -->
+      <div id="erp" class="tab-content" style="display:none;">
+        <h2>🔗 ERP Integration</h2>
+        <p>Sync leads from Indiamart, Justdial, Google Ads, Facebook</p>
+        <div class="integration-actions">
+          <button onclick="addLeadSource()" class="btn-primary">➕ Add Lead Source</button>
+        </div>
+        <div class="source-list">
+          <div class="source-item">
+            <div class="source-icon">🌐</div>
+            <div class="source-info">
+              <h3>Indiamart</h3>
+              <p>Auto-create leads from Indiamart inquiries</p>
+            </div>
+            <div class="source-status">Connected</div>
+            <div class="source-actions">
+              <button onclick="syncIndiamart()">🔄 Sync Now</button>
+              <button onclick="editIndiamart()">⚙️ Settings</button>
+            </div>
+          </div>
+          <div class="source-item">
+            <div class="source-icon">📞</div>
+            <div class="source-info">
+              <h3>Justdial</h3>
+              <p>Sync leads from Justdial calls & messages</p>
+            </div>
+            <div class="source-status">Connected</div>
+            <div class="source-actions">
+              <button onclick="syncJustdial()">🔄 Sync Now</button>
+              <button onclick="editJustdial()">⚙️ Settings</button>
+            </div>
+          </div>
+          <div class="source-item">
+            <div class="source-icon">🔍</div>
+            <div class="source-info">
+              <h3>Google Ads</h3>
+              <p>Auto-create leads from Google Form submissions</p>
+            </div>
+            <div class="source-status">Not Connected</div>
+            <div class="source-actions">
+              <button onclick="connectGoogle()">🔗 Connect</button>
+            </div>
+          </div>
+          <div class="source-item">
+            <div class="source-icon">📘</div>
+            <div class="source-info">
+              <h3>Facebook Leads</h3>
+              <p>Sync leads from Facebook Lead Ads</p>
+            </div>
+            <div class="source-status">Not Connected</div>
+            <div class="source-actions">
+              <button onclick="connectFacebook()">🔗 Connect</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Tab -->
+      <div id="admin" class="tab-content" style="display:none;">
+        <h2>🔐 Admin Panel</h2>
+        <p>Manage roles, permissions, and analytics</p>
+        <div class="admin-section">
+          <h3>📊 Cost Analytics</h3>
+          <canvas id="costChart"></canvas>
+        </div>
+        <div class="admin-section">
+          <h3>👥 Role-Based Permissions</h3>
+          <div id="roleList"></div>
+          <button onclick="addRole()" class="btn-primary">+ Add Role</button>
+        </div>
+      </div>
+
+    </main>
+
+    <footer class="footer">
+      <p>© 2025 Aavana Greens. Designed with care.</p>
+    </footer>
+  </div>
+
+  <!-- Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js');
+      });
+    }
+  </script>
+
+  <script src="script.js"></script>
 </body>
 </html>
